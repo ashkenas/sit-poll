@@ -1,4 +1,5 @@
-const { statusError } = require("./helpers")
+const { ObjectId } = require("mongodb");
+const { statusError } = require("./helpers");
 
 const exists = (val, name) => {
     if (!val)
@@ -25,5 +26,11 @@ module.exports = {
         if (isNaN((number = +number)))
             throw statusError(400, `Field '${name}' must be a number.`);
         return number;
+    },
+    requireId(id, name) {
+        exists(id);
+        if (typeof id !== 'string' || !ObjectId.isValid(id))
+            throw statusError(400, `Field '${name}' must be a valid ID.`);
+        return ObjectId(id);
     }
-}
+};
