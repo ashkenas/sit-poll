@@ -1,6 +1,6 @@
 <form id="form">
     <select id="options">
-        {{#each options}}
+        {{#each poll.choices}}
         <option value="{{@index}}">{{this}}</option>
         {{/each}}
     </select>
