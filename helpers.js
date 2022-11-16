@@ -10,6 +10,12 @@ module.exports = {
         error.status = status;
         return error;
     },
+    stringifyId(document) {
+        return { ...document, _id: document._id.toString() };
+    },
+    sync(func) {
+        return (req, res, next) => func(req, res, next).catch(next);
+    },
     async hashPassword (password) {
         const salt = crypto.randomBytes(12); 
         const pass = (await pbkdf2(password, salt, 10000, 64, 'sha512')).toString('hex');

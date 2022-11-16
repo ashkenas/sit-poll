@@ -1,6 +1,5 @@
 const { ObjectId } = require("mongodb");
 const { hashPassword } = require("../helpers");
-const { purge } = require("../routes/polls");
 const { dbConnection, closeConnection } = require("../config/mongoConnection");
 const collections = require("../config/mongoCollections");
 
@@ -147,10 +146,23 @@ const main = async () => {
     pEng.rosters = [rEng1, rEng2, rEng3];
     // Make some polls
     const pollCS = Poll("Should we do more beep boop?", ['Definitely', 'Yes', 'Maybe', "I'd rather not", 'I will drop out'],
-        pCS._id, false, Date.now() - (Math.random() * 1000*60*60*24*3), Date.now() + ((1 + (Math.random() * 2)) * 1000*60*60*24));
+        pCS._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
     rCS2.polls.push(pollCS._id);
     const pollAll = Poll("Stevens?", ['Quack', 'Castle Point Hill', 'More debt???'],
-        admin._id, true, Date.now() - (Math.random() * 1000*60*60*24*3), Date.now() + ((1 + (Math.random() * 2)) * 1000*60*60*24));
+        admin._id, true, Date.now() - Math.floor(Math.random() * 1000*60*60*24*3),
+        Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    // Vote and React
+    rCS2.students.forEach(student => {
+        const user = users.find(user => user.email === student);
+        if (Math.random() < .8) {
+            pollCS.votes.push(Vote(user._id, Math.floor(Math.random() * 5)));
+            if (Math.random() < .9)
+                pollCS.reactions.push(Reaction(user._id, Math.random() < .8 ? 'like' : 'dislike'));
+            if (Math.random() < .15)
+                pollCS.comments.push(Comment(user._id, `My favorite beep boop is beep boop #${Math.floor(Math.random()*10000)}`,
+                    Date.now() - Math.floor(Math.random() * 1000*60*60*5)));
+        }
+    });
     // Database things
     const db = await dbConnection();
     await db.dropDatabase();
