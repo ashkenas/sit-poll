@@ -25,6 +25,8 @@ router
         const vote = req.body.vote;
         if (vote < 0 || vote >= poll.choices.length)
             throw statusError(400, 'Vote choice out-of-bounds.');
+        if (poll.close_date < Date.now())
+            throw statusError(400, 'Poll is closed, cannot vote.');
         // Vote logic into database would go here
         // Now that the vote has been processed, tell the webpage to redirect the user
         res.json({ redirect: path.join(req.originalUrl, 'results') });

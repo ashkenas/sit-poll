@@ -1,6 +1,7 @@
-const { polls } = require("../config/mongoCollections");
-const { stringifyId, statusError } = require("../helpers");
+const { polls, users } = require("../config/mongoCollections");
+const { stringifyId, statusError, sync } = require("../helpers");
 const { requireId } = require("../validation");
+const { getUserById } = require("./users");
 
 const pollExists = async (id) => {
     id = requireId(id, 'id');
@@ -9,14 +10,42 @@ const pollExists = async (id) => {
     return poll !== null;
 };
 
-const requirePoll = (id) => (req, res, next) => {
+/**
+ * Gaurantees poll existence. Also validates that current
+ * user can view it.
+ * @param {string} id Request parameter to check for id
+ * @returns 
+ */
+const requirePoll = (id) => sync(async (req, res, next) => {
     req.params[id] = requireId(req.params[id], id);
-    pollExists(req.params[id]).then((exists) => {
-        if(!exists)
-            return next(statusError(404, 'Poll not found.'));
-        next();
-    }).catch(next);
-};
+    const exists = await pollExists(req.params[id]);
+    if (!exists) // Make sure poll exists
+        throw statusError(404, 'Poll not found.');
+
+    if (req.session.admin) // Admins can always see
+        return next();
+
+    if ((await getPollById(req.params[id])).public) // Poll is public
+        return next();
+
+    const usersCol = await users();
+    if (req.session.manager) { // Check if the user manages this poll
+        const manager = await usersCol.findOne({
+            _id: req.session.userId,
+            rosters: { $elemMatch: { polls: req.params[id] } }
+        });
+        if (manager) return next();
+    }
+    const manager = await usersCol.findOne({
+        rosters: { $elemMatch: {
+            students: (await getUserById(req.session.userId)).email,
+            polls: req.params[id]
+        } }
+    });
+    if (manager) // User has been assigned this poll
+        return next();
+    throw statusError(403, 'Permission denied.');
+});
 
 const getPollById = async (id) => {
     id = requireId(id, 'id');
