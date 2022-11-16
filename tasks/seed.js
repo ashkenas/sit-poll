@@ -20,7 +20,7 @@ const allMajors = {
     "Software Engineering": "School of Systems",
 };
 
-const csMajor = { "Computer Science": "Schaffer School of Engineering" };
+const csMajor = { "Computer Science": "Schaefer School of Engineering" };
 
 const engineeringMajors = {
     "Computer Engineering": "Schaefer School of Engineering",
