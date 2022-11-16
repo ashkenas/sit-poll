@@ -12,7 +12,7 @@ const pathParts = window.location.pathname.split('/');
 const pollId = pathParts[pathParts.length - 1];
 const options = document.getElementById('options');
 const error = document.getElementById('options-error');
-handleForm("form", "POST", `/polls/${pollId}`, async (submit) => {
+handleForm("form", "POST", `/polls/${pollId}`, () => {
     if (!options.value) {
         error.innerText = 'An option must be selected.';
         return;
@@ -21,9 +21,6 @@ handleForm("form", "POST", `/polls/${pollId}`, async (submit) => {
     }
 
     const vote = +options.value;
-    const response = await submit({ vote: vote });
-    if (!response.ok) alert(await response.text());
-    const data = await response.json();
-    window.location = data.redirect;
+    return { vote: vote };
 });
 </script>

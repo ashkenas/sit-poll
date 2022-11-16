@@ -28,10 +28,14 @@ configRoutes(app);
 app.use((err, req, res, next) => { // Error middleware
     if (res.headersSent) return next(err);
     const status = err.status ? err.status : 500;
-    res.status(status).render('error', {
-        status: status,
-        message: err.message
-    });
+    if (req.method === 'GET') {
+        res.status(status).render('error', {
+            status: status,
+            message: err.message
+        });
+    } else {
+        res.status(status).json({ error: err.message });
+    }
 });
 
 app.engine('handlebars', exphbs.engine({ defaultLayout: 'main' }));

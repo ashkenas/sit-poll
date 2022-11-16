@@ -1,15 +1,21 @@
 const handleForm = async (formId, method, action, handler) => {
-    const submit = async (data) => {
-        return await fetch(action, {
+    document.getElementById(formId).addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const data = handler(event);
+        const response = await fetch(action, {
             body: JSON.stringify(data),
             headers: {
+                'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             method: method
         });
-    }
-    document.getElementById(formId).addEventListener('submit', (event) => {
-        event.preventDefault();
-        handler(submit);
+        const responseData = (await response.json());
+        if (!response.ok) {
+            alert(responseData.error);
+            return;
+        }
+        if(responseData.redirect)
+            window.location = responseData.redirect;
     });
 };
