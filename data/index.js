@@ -1,3 +1,4 @@
 module.exports = {
-    polls: require('./polls')
+    polls: require('./polls'),
+    users: require('./users')
 };

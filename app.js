@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     saveUninitialized: false,
-    secret: process.env.COOKIE_SECRET ?? crypto.randomBytes(16).toString('hex'),
+    secret: process.env.COOKIE_SECRET || crypto.randomBytes(16).toString('hex'),
     resave: true
 }));
 app.use((req, res, next) => { // Redirect if not logged in
