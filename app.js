@@ -24,6 +24,7 @@ app.use((req, res, next) => { // Redirect if not logged in
         res.redirect('/login');
     } else next();
 });
+configRoutes(app);
 app.use((err, req, res, next) => { // Error middleware
     if (res.headersSent) return next(err);
     const status = err.status ? err.status : 500;
@@ -35,8 +36,6 @@ app.use((err, req, res, next) => { // Error middleware
 
 app.engine('handlebars', exphbs.engine({ defaultLayout: 'main' }));
 app.set('view engine', 'handlebars');
-
-configRoutes(app);
 
 app.listen(3000, () => {
     console.log("We've now got a server!");

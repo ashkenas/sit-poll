@@ -1,5 +1,7 @@
 const express = require('express');
+const { validate } = require('../validation');
 const router = express.Router();
+const path = require('path');
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -11,11 +13,16 @@ router
 
 router
     .route('/:id')
-    .get(async (req, res) => { // Get voting page for poll
-        notImplemented(res);
+    .get(validate(), async (req, res) => { // Get voting page for poll
+        // At this point, req.params.id is a valid ObjectId
+        res.render('polls/vote', { options: ['A', 'B', 'C'] })
     })
-    .post(async (req, res) => { // Vote on poll
-        notImplemented(res);
+    .post(validate(['vote']), async (req, res) => { // Vote on poll
+        // At this point, req.params.id is a valid ObjectId
+        // At this point, req.body.vote is a valid number
+        // Vote logic into database would go here
+        // Now that the vote has been processed, tell the webpage to redirect the user
+        res.json({ redirect: path.join(req.originalUrl, 'results') });
     })
     .put(async (req, res) => { // Update poll
         notImplemented(res);
@@ -33,7 +40,7 @@ router
 router
     .route('/:id/results')
     .get(async (req, res) => { // Results page for poll
-        notImplemented(res);
+        res.send('TODO: results page');
     });
 
 router

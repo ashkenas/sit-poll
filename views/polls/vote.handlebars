@@ -1,0 +1,29 @@
+<form id="form">
+    <select id="options">
+        {{#each options}}
+        <option value="{{@index}}">{{this}}</option>
+        {{/each}}
+    </select>
+    <p id="options-error" class="error"></p>
+    <input type="submit" value="vote">
+</form>
+<script>
+const pathParts = window.location.pathname.split('/');
+const pollId = pathParts[pathParts.length - 1];
+const options = document.getElementById('options');
+const error = document.getElementById('options-error');
+handleForm("form", "POST", `/polls/${pollId}`, async (submit) => {
+    if (!options.value) {
+        error.innerText = 'An option must be selected.';
+        return;
+    } else {
+        error.innerText = '';
+    }
+
+    const vote = +options.value;
+    const response = await submit({ vote: vote });
+    if (!response.ok) alert(await response.text());
+    const data = await response.json();
+    window.location = data.redirect;
+});
+</script>
