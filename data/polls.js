@@ -1,6 +1,7 @@
+const { ObjectId } = require("mongodb");
 const { polls, users } = require("../config/mongoCollections");
 const { stringifyId, statusError, sync } = require("../helpers");
-const { requireId } = require("../validation");
+const { requireId, requireInteger } = require("../validation");
 const { getUserById } = require("./users");
 
 const pollExists = async (id) => {
@@ -11,10 +12,9 @@ const pollExists = async (id) => {
 };
 
 /**
- * Gaurantees poll existence. Also validates that current
- * user can view it.
+ * Middleware that gaurantees poll existence. Also
+ * validates that the current user can view it.
  * @param {string} id Request parameter to check for id
- * @returns 
  */
 const requirePoll = (id) => sync(async (req, res, next) => {
     req.params[id] = requireId(req.params[id], id);
@@ -47,22 +47,35 @@ const requirePoll = (id) => sync(async (req, res, next) => {
     throw statusError(403, 'Permission denied.');
 });
 
+const getPollInfoById = async (id) => {
+    id = requireId(id, 'id');
+    const pollsCol = await polls();
+    const poll = await pollsCol.findOne(
+        { _id: id },
+        { project: { votes: 0, comments: 0, reactions: 0 } }
+    );
+    return poll ? stringifyId(poll) : null;
+};
+
 const getPollById = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
     const poll = await pollsCol.findOne({ _id: id });
     if (!poll) return null;
 
-    poll.votes = poll.votes.map(stringifyId);
-    poll.reactions = poll.reactions.map(stringifyId);
-    poll.comments = poll.comments.map(stringifyId);
+    // poll.votes = poll.votes.map(stringifyId);
+    // poll.reactions = poll.reactions.map(stringifyId);
+    // poll.comments = poll.comments.map(stringifyId);
     return stringifyId(poll);
 };
 
-const getPollSimplified = async (id) => {
+const getPollResults = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
-    const poll = await pollsCol.findOne({ _id: id }, { project: { votes: 0, reactions: 0 } });
+    const poll = await pollsCol.findOne(
+        { _id: id },
+        { project: { votes: 0, reactions: 0 } }
+    );
     if (!poll) return null;
 
     poll.votes = (await pollsCol.aggregate([
@@ -83,9 +96,58 @@ const getPollSimplified = async (id) => {
     return stringifyId(poll);
 };
 
+const getVote = async (pollId, userId) => {
+    pollId = requireId(pollId, 'pollId');
+    if (!(await pollExists(pollId)))
+        throw 'Poll does not exist.';
+    userId = requireId(userId, 'userId');
+    if (!(await getUserById(userId)))
+        throw 'User does not exist.';
+    const poll = await getPollById(pollId);
+    const vote = poll.votes.find((vote) => vote.user.equals(userId));
+    return vote ? vote.vote : null;
+};
+
+const voteOnPoll = async (pollId, userId, vote) => {
+    pollId = requireId(pollId, 'pollId');
+    if (!(await pollExists(pollId)))
+        throw 'Poll does not exist.';
+    userId = requireId(userId, 'userId');
+    if (!(await getUserById(userId)))
+        throw 'User does not exist.';
+    vote = requireInteger(vote, 'vote');
+    const poll = await getPollById(pollId);
+    if (vote < 0 || vote >= poll.choices.length)
+        throw 'Invalid vote index.'
+    const lastVote = await getVote(pollId, userId);
+    if (lastVote !== null && lastVote === vote) return;
+    const pollsCol = await polls();
+    let res;
+    if (lastVote !== null) {
+        res = await pollsCol.updateOne(
+            { _id: pollId, votes: { $elemMatch: { user: userId } } },
+            { $set: { "votes.$.vote": vote } }
+        );
+    } else {
+        res = await pollsCol.updateOne(
+            { _id: pollId },
+            { $push: { votes: {
+                _id: ObjectId(),
+                user: userId,
+                vote: vote
+            } } }
+        );
+    }
+    if (!res.acknowledged || !res.modifiedCount)
+        throw 'Failed to cast vote.';
+}
+
 module.exports = {
     getPollById,
-    getPollSimplified,
+    getPollInfoById,
+    getPollResults,
+    getVote,
     pollExists,
-    requirePoll
+    requirePoll,
+    voteOnPoll
 };
