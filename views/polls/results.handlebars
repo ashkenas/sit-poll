@@ -1,0 +1,10 @@
+<h1>{{poll.title}}</h1>
+<h2>By {{author}}</h2>
+{{#each poll.votes}}
+<div{{#if (equals ../vote @index)}} class="voted"{{/if}}>
+    <label for="choice{{@index}}">{{this.choice}}:</label>
+    <span id="choice{{@index}}">{{this.votes}}</span>
+</div>
+{{/each}}
+<script>
+</script>

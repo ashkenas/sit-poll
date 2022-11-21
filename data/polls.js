@@ -78,12 +78,18 @@ const getPollResults = async (id) => {
     );
     if (!poll) return null;
 
-    poll.votes = (await pollsCol.aggregate([
+    const votes = (await pollsCol.aggregate([
         { $match: { _id: id } },
         { $unwind: { path: '$votes' } },
-        { $group: { _id: '$votes.vote', count: { $count: {} } } },
-        { $sort: { _id: 1 } }
-    ]).toArray()).map((vote) => vote.count);
+        { $group: { _id: '$votes.vote', count: { $count: {} } } }
+    ]).toArray()).reduce((prev, curr) => (prev[poll.choices[curr._id]] = curr.count, prev), {});
+
+    poll.votes = poll.choices.map((choice) => {
+        return {
+            choice: choice,
+            votes: votes[choice] || 0
+        };
+    });
 
     poll.reactions = (await pollsCol.aggregate([
         { $match: { _id: id } },

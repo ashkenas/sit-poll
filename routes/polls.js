@@ -3,21 +3,31 @@ const { validate } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
+const { getVote } = require('../data/polls');
+const { getUserById } = require('../data/users');
 const { requirePoll, getPollInfoById, getPollResults, voteOnPoll } = require('../data').polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
 router
     .route('/')
-    .post(async (req, res) => { // Create poll
+    .get(sync(async (req, res) => { // View polls
         notImplemented(res);
-    });
+    }))
+    .post(sync(async (req, res) => { // Create poll
+        notImplemented(res);
+    }));
 
 router
     .use('/:id', requirePoll('id')) // Automatically 404s for all methods if necessary
     .route('/:id')
     .get(sync(async (req, res) => { // Get voting page for poll
-        res.render('polls/vote', { poll: await getPollInfoById(req.params.id) });
+        const poll = await getPollInfoById(req.params.id);
+        res.render('polls/vote', {
+            poll: poll,
+            author: (await getUserById(poll.author)).display_name,
+            lastVote: await getVote(req.params.id, req.session.userId)
+        });
     }))
     .post(validate(['vote']), sync(async (req, res) => { // Vote on poll
         const poll = await getPollInfoById(req.params.id);
@@ -30,42 +40,50 @@ router
         // Now that the vote has been processed, tell the webpage to redirect the user
         res.json({ redirect: path.join(req.originalUrl, 'results') });
     }))
-    .put(async (req, res) => { // Update poll
+    .put(sync(async (req, res) => { // Update poll
         notImplemented(res);
-    })
-    .delete(async (req, res) => { // Delete poll
+    }))
+    .delete(sync(async (req, res) => { // Delete poll
         notImplemented(res);
-    });
+    }));
 
 router
     .route('/:id/edit')
-    .get(async (req, res) => { // Edit page for poll
+    .get(sync(async (req, res) => { // Edit page for poll
         notImplemented(res);
-    });
+    }));
 
 router
     .use('/:id/results', requirePoll('id')) // Automatically 404s for all methods if necessary
     .route('/:id/results')
     .get(sync(async (req, res) => { // Results page for poll
+        const vote = await getVote(req.params.id, req.session.userId);
+        if (vote === null)
+            return res.redirect(`/polls/${req.params.id.toString()}`);
         const poll = await getPollResults(req.params.id);
-        res.json(poll.choices.map((choice, i) => {
-            return {
-                choice: choice,
-                count: poll.votes[i]
-            };
-        }));
+        res.render('polls/results', {
+            poll: poll,
+            vote: vote,
+            author: (await getUserById(poll.author)).display_name,
+        });
     }));
 
 router
     .route('/:id/comment')
-    .post(async (req, res) => { // Create comment on poll
+    .post(sync(async (req, res) => { // Create comment on poll
         notImplemented(res);
-    });
+    }));
+
+router
+    .route('/:id/comment/:commentId')
+    .delete(sync(async (req, res) => { // Delete comment on poll
+        notImplemented(res);
+    }));
 
 router
     .route('/:id/react')
-    .post(async (req, res) => { // Leave reaction on poll
+    .post(sync(async (req, res) => { // Leave reaction on poll
         notImplemented(res);
-    });
+    }));
 
 module.exports = router;

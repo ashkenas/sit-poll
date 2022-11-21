@@ -27,7 +27,7 @@ app.use((req, res, next) => { // Redirect if not logged in
 configRoutes(app);
 app.use((err, req, res, next) => { // Error middleware
     if (res.headersSent) return next(err);
-    const status = err.status ? err.status : 500;
+    const status = err.status || 500;
     if (req.method === 'GET') {
         res.status(status).render('error', {
             status: status,
@@ -38,7 +38,12 @@ app.use((err, req, res, next) => { // Error middleware
     }
 });
 
-app.engine('handlebars', exphbs.engine({ defaultLayout: 'main' }));
+app.engine('handlebars', exphbs.engine({
+    defaultLayout: 'main',
+    helpers: {
+        equals: (a, b) => a === b
+    }
+}));
 app.set('view engine', 'handlebars');
 
 app.listen(3000, () => {

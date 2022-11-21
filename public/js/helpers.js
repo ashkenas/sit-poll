@@ -1,7 +1,17 @@
+const errorManager = (id) => {
+    const errorElement = document.getElementById(id);
+    return (message) => {
+        errorElement.innerText = message || '';
+        errorElement.style.display = message ? 'block' : 'hidden';
+    };
+};
+
 const handleForm = async (formId, method, action, handler) => {
-    document.getElementById(formId).addEventListener('submit', async (event) => {
+    const form = document.getElementById(formId);
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const data = handler(event);
+        const data = handler(new FormData(form));
+        if (!data) return;
         const response = await fetch(action, {
             body: JSON.stringify(data),
             headers: {
