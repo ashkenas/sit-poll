@@ -20,25 +20,44 @@ app.use(session({
 }));
 app.use((req, res, next) => { // Redirect if not logged in
     if (req.path !== '/login' && !req.session.userId) {
-        req.session.redirect = req.originalUrl;
-        res.redirect('/login');
+        if (req.method === 'GET') {
+            req.session.redirect = req.originalUrl;
+            res.redirect('/login');
+        } else {
+            res.status(403).json({ error: 'Not logged in.' });
+        }
     } else next();
 });
 configRoutes(app);
 app.use((err, req, res, next) => { // Error middleware
     if (res.headersSent) return next(err);
-    const status = err.status ? err.status : 500;
+    const status = err.status || 500;
     if (req.method === 'GET') {
         res.status(status).render('error', {
             status: status,
-            message: err.message
+            message: err.message || err
         });
     } else {
-        res.status(status).json({ error: err.message });
+        res.status(status).json({ error: err.message || err });
     }
 });
 
-app.engine('handlebars', exphbs.engine({ defaultLayout: 'main' }));
+app.engine('handlebars', exphbs.engine({
+    defaultLayout: 'main',
+    helpers: {
+        equals: (a, b) => a === b,
+        date: (d) => {
+            const today = (new Date()).toDateString();
+            const comp = new Date(d);
+            if (today !== comp.toDateString())
+                return comp.toLocaleDateString();
+            const hour = comp.getHours();
+            const strHour = hour % 12 === 0 ? 12 : hour % 12;
+            const strMinutes = comp.getMinutes().toString().padStart(2, '0');
+            return `${strHour}:${strMinutes} ${hour >= 12 ? 'PM' : 'AM'}`;
+        }
+    }
+}));
 app.set('view engine', 'handlebars');
 
 app.listen(3000, () => {

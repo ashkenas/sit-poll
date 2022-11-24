@@ -1,7 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { polls, users } = require("../config/mongoCollections");
 const { stringifyId, statusError, sync } = require("../helpers");
-const { requireId, requireInteger } = require("../validation");
+const { requireId, requireInteger, requireString } = require("../validation");
 const { getUserById } = require("./users");
 
 const pollExists = async (id) => {
@@ -37,10 +37,12 @@ const requirePoll = (id) => sync(async (req, res, next) => {
         if (manager) return next();
     }
     const manager = await usersCol.findOne({
-        rosters: { $elemMatch: {
-            students: (await getUserById(req.session.userId)).email,
-            polls: req.params[id]
-        } }
+        rosters: {
+            $elemMatch: {
+                students: (await getUserById(req.session.userId)).email,
+                polls: req.params[id]
+            }
+        }
     });
     if (manager) // User has been assigned this poll
         return next();
@@ -78,20 +80,54 @@ const getPollResults = async (id) => {
     );
     if (!poll) return null;
 
-    poll.votes = (await pollsCol.aggregate([
+    const votes = (await pollsCol.aggregate([
         { $match: { _id: id } },
+        { $project: { _id: 0, votes: 1 } },
         { $unwind: { path: '$votes' } },
-        { $group: { _id: '$votes.vote', count: { $count: {} } } },
-        { $sort: { _id: 1 } }
-    ]).toArray()).map((vote) => vote.count);
+        { $group: { _id: '$votes.vote', count: { $count: {} } } }
+    ]).toArray()).reduce((prev, curr) => (prev[poll.choices[curr._id]] = curr.count, prev), {});
+
+    poll.votes = poll.choices.map((choice) => {
+        return {
+            choice: choice,
+            votes: votes[choice] || 0
+        };
+    });
 
     poll.reactions = (await pollsCol.aggregate([
         { $match: { _id: id } },
+        { $project: { _id: 0, reactions: 1 } },
         { $unwind: { path: '$reactions' } },
         { $group: { _id: '$reactions.reaction', count: { $count: {} } } }
     ]).toArray()).map((reaction) => { return { reaction: reaction._id, count: reaction.count }; });
 
-    poll.comments = poll.comments.map(stringifyId);
+    poll.comments = (await pollsCol.aggregate([
+        { $match: { _id: id } },
+        {
+            $project: {
+                comments: 1
+            }
+        },
+        { $unwind: '$comments' },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'comments.user',
+                foreignField: '_id',
+                pipeline: [
+                    {
+                        $project: {
+                            _id: 0,
+                            display_name: 1
+                        }
+                    }
+                ],
+                as: 'comments.user'
+            }
+        },
+        { $unwind: '$comments.user' },
+        { $sort: { 'comments.date': -1 } }
+    ]).toArray()).map((comment) => stringifyId(comment.comments));
 
     return stringifyId(poll);
 };
@@ -103,6 +139,7 @@ const getVote = async (pollId, userId) => {
     userId = requireId(userId, 'userId');
     if (!(await getUserById(userId)))
         throw 'User does not exist.';
+
     const poll = await getPollById(pollId);
     const vote = poll.votes.find((vote) => vote.user.equals(userId));
     return vote ? vote.vote : null;
@@ -121,6 +158,7 @@ const voteOnPoll = async (pollId, userId, vote) => {
         throw 'Invalid vote index.'
     const lastVote = await getVote(pollId, userId);
     if (lastVote !== null && lastVote === vote) return;
+
     const pollsCol = await polls();
     let res;
     if (lastVote !== null) {
@@ -131,18 +169,50 @@ const voteOnPoll = async (pollId, userId, vote) => {
     } else {
         res = await pollsCol.updateOne(
             { _id: pollId },
-            { $push: { votes: {
-                _id: ObjectId(),
-                user: userId,
-                vote: vote
-            } } }
+            {
+                $push: {
+                    votes: {
+                        _id: ObjectId(),
+                        user: userId,
+                        vote: vote
+                    }
+                }
+            }
         );
     }
     if (!res.acknowledged || !res.modifiedCount)
         throw 'Failed to cast vote.';
-}
+};
+
+const addComment = async (pollId, userId, comment) => {
+    pollId = requireId(pollId, 'pollId');
+    if (!(await pollExists(pollId)))
+        throw 'Poll does not exist.';
+    userId = requireId(userId, 'userId');
+    if (!(await getUserById(userId)))
+        throw 'User does not exist.';
+    comment = requireString(comment, 'comment');
+
+    const pollsCol = await polls();
+    const res = await pollsCol.updateOne(
+        { _id: pollId },
+        {
+            $push: {
+                comments: {
+                    _id: ObjectId(),
+                    user: userId,
+                    comment: comment,
+                    date: new Date()
+                }
+            }
+        }
+    );
+    if (!res.acknowledged || !res.modifiedCount)
+        throw 'Failed to add comment.';
+};
 
 module.exports = {
+    addComment,
     getPollById,
     getPollInfoById,
     getPollResults,

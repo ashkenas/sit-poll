@@ -160,7 +160,7 @@ const main = async () => {
                 pollCS.reactions.push(Reaction(user._id, Math.random() < .8 ? 'like' : 'dislike'));
             if (Math.random() < .15)
                 pollCS.comments.push(Comment(user._id, `My favorite beep boop is beep boop #${Math.floor(Math.random()*10000)}`,
-                    Date.now() - Math.floor(Math.random() * 1000*60*60*5)));
+                    Date.now() - Math.floor(Math.random() * 1000*60*60*24*3)));
         }
     });
     // Database things

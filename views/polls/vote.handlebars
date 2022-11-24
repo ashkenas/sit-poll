@@ -1,26 +1,26 @@
-<form id="form">
-    <select id="options">
-        {{#each poll.choices}}
-        <option value="{{@index}}">{{this}}</option>
-        {{/each}}
-    </select>
+<h1>{{poll.title}}</h1>
+<h2>By {{author}}</h2>
+<form id="vote-form">
+    {{#each poll.choices}}
+        <input type="radio" id="vote{{@index}}" name="vote" value="{{@index}}" {{#if (equals ../lastVote @index)}}checked{{/if}}>
+        <label for="vote{{@index}}">{{this}}</label>
+    {{/each}}
     <p id="options-error" class="error"></p>
-    <input type="submit" value="vote">
+    <input type="submit" value="Vote">
 </form>
 <script>
-const pathParts = window.location.pathname.split('/');
-const pollId = pathParts[pathParts.length - 1];
-const options = document.getElementById('options');
-const error = document.getElementById('options-error');
-handleForm("form", "POST", `/polls/${pollId}`, () => {
-    if (!options.value) {
-        error.innerText = 'An option must be selected.';
+const showVoteError = errorManager('options-error');
+
+handleForm('vote-form', 'POST', '/polls/{{poll._id}}', (formData) => {
+    const vote = formData.get('vote');
+
+    if (vote === null) {
+        showVoteError('An option must be selected.');
         return;
-    } else {
-        error.innerText = '';
     }
 
-    const vote = +options.value;
-    return { vote: vote };
+    showVoteError(); // Hides error info if no error
+
+    return { vote: +vote };
 });
 </script>
