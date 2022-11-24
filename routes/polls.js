@@ -3,9 +3,9 @@ const { validate } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
-const { getVote } = require('../data/polls');
-const { getUserById } = require('../data/users');
-const { requirePoll, getPollInfoById, getPollResults, voteOnPoll } = require('../data').polls;
+const data = require('../data');
+const { getUserById } = data.users;
+const { getVote, addComment, requirePoll, getPollInfoById, getPollResults, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -70,8 +70,9 @@ router
 
 router
     .route('/:id/comment')
-    .post(sync(async (req, res) => { // Create comment on poll
-        notImplemented(res);
+    .post(validate(['comment']), sync(async (req, res) => { // Create comment on poll
+        await addComment(req.params.id, req.session.userId, req.body.comment);
+        res.json({ redirect: path.join(req.originalUrl, '..', 'results') });
     }));
 
 router

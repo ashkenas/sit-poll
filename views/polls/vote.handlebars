@@ -1,6 +1,6 @@
 <h1>{{poll.title}}</h1>
 <h2>By {{author}}</h2>
-<form id="form">
+<form id="vote-form">
     {{#each poll.choices}}
         <input type="radio" id="vote{{@index}}" name="vote" value="{{@index}}" {{#if (equals ../lastVote @index)}}checked{{/if}}>
         <label for="vote{{@index}}">{{this}}</label>
@@ -9,17 +9,18 @@
     <input type="submit" value="Vote">
 </form>
 <script>
-const showError = errorManager('options-error');
+const showVoteError = errorManager('options-error');
 
-handleForm("form", "POST", "/polls/{{poll._id}}", (formData) => {
-    if (formData.get('vote') === null) {
-        showError("An option must be selected.");
+handleForm('vote-form', 'POST', '/polls/{{poll._id}}', (formData) => {
+    const vote = formData.get('vote');
+
+    if (vote === null) {
+        showVoteError('An option must be selected.');
         return;
-    } else {
-        showError(); // Hides error info if no error
     }
 
-    const vote = +formData.get('vote');
-    return { vote: vote };
+    showVoteError(); // Hides error info if no error
+
+    return { vote: +vote };
 });
 </script>

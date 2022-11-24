@@ -1,10 +1,39 @@
+<header>
 <h1>{{poll.title}}</h1>
-<h2>By {{author}}</h2>
+<p>By <span>{{author}}</span></p>
+</header>
 {{#each poll.votes}}
 <div{{#if (equals ../vote @index)}} class="voted"{{/if}}>
     <label for="choice{{@index}}">{{this.choice}}:</label>
     <span id="choice{{@index}}">{{this.votes}}</span>
 </div>
 {{/each}}
+<h2>Comments</h2>
+<form id="comment-form">
+    <label for="comment">New Comment</label>
+    <textarea id="comment" name="comment"></textarea>
+    <p id="comment-error" class="error"></p>
+    <input type="submit">
+</form>
+{{#each poll.comments}}
+<div>
+    <p><span>{{this.user.display_name}}</span> <span>{{date this.date}}</span></p>
+    <p>{{this.comment}}</p>
+</div>
+{{/each}}
 <script>
+const showCommentError = errorManager('comment-error');
+
+handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => {
+    const comment = formData.get('comment');
+
+    if (!comment || !comment.trim()) {
+        showCommentError('Comment cannot be blank.');
+        return;
+    }
+
+    showCommentError(); // Hides error info if no error
+
+    return { comment: comment };
+});
 </script>
