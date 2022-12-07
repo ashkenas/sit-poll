@@ -1,7 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { polls, users } = require("../config/mongoCollections");
 const { stringifyId, statusError, sync } = require("../helpers");
-const { requireId, requireInteger, requireString } = require("../validation");
+const { requireId, requireInteger, requireString, validReactions } = require("../validation");
 const { getUserById } = require("./users");
 
 const pollExists = async (id) => {
@@ -49,6 +49,28 @@ const requirePoll = (id) => sync(async (req, res, next) => {
     throw statusError(403, 'Permission denied.');
 });
 
+const requirePollAndUser = async (pollId, userId) => {
+    pollId = requireId(pollId, 'pollId');
+    if (!(await pollExists(pollId)))
+        throw 'Poll does not exist.';
+    userId = requireId(userId, 'userId');
+    if (!(await getUserById(userId)))
+        throw 'User does not exist.';
+    return [pollId, userId];
+};
+
+const deleteReaction = async (pollId, userId) => {
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
+
+    const pollsCol = await polls();
+    const res = await pollsCol.updateOne(
+        { _id: pollId },
+        { $pull: { reactions: { user: userId } } }
+    );
+    if (!res.acknowledged || !res.modifiedCount)
+        throw 'Failed to delete reaction.';
+};
+
 const getPollInfoById = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
@@ -94,12 +116,19 @@ const getPollResults = async (id) => {
         };
     });
 
-    poll.reactions = (await pollsCol.aggregate([
+    const reactions = (await pollsCol.aggregate([
         { $match: { _id: id } },
         { $project: { _id: 0, reactions: 1 } },
         { $unwind: { path: '$reactions' } },
         { $group: { _id: '$reactions.reaction', count: { $count: {} } } }
-    ]).toArray()).map((reaction) => { return { reaction: reaction._id, count: reaction.count }; });
+    ]).toArray()).reduce((prev, curr) => (prev[curr._id] = curr.count, prev), {});
+
+    poll.reactions = validReactions.map((reaction) => {
+        return {
+            reaction: reaction,
+            count: reactions[reaction] || 0
+        };
+    });
 
     poll.comments = (await pollsCol.aggregate([
         { $match: { _id: id } },
@@ -132,26 +161,59 @@ const getPollResults = async (id) => {
     return stringifyId(poll);
 };
 
+const getReaction = async (pollId, userId) => {
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
+
+    const poll = await getPollById(pollId);
+    const reaction = poll.reactions.find((reaction) => reaction.user.equals(userId));
+    return reaction ? reaction.reaction : null;
+};
+
 const getVote = async (pollId, userId) => {
-    pollId = requireId(pollId, 'pollId');
-    if (!(await pollExists(pollId)))
-        throw 'Poll does not exist.';
-    userId = requireId(userId, 'userId');
-    if (!(await getUserById(userId)))
-        throw 'User does not exist.';
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
 
     const poll = await getPollById(pollId);
     const vote = poll.votes.find((vote) => vote.user.equals(userId));
     return vote ? vote.vote : null;
 };
 
+const reactOnPoll = async (pollId, userId, reaction) => {
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
+    reaction = requireString(reaction, 'reaction').toLowerCase();
+    if (!(validReactions.includes(reaction)))
+        throw 'Invalid reaction.'
+
+    const poll = await getPollById(pollId);
+    const lastReaction = await getReaction(pollId, userId);
+    if (lastReaction !== null && lastReaction === reaction) return;
+
+    const pollsCol = await polls();
+    let res;
+    if (lastReaction !== null) {
+        res = await pollsCol.updateOne(
+            { _id: pollId, reactions: { $elemMatch: { user: userId } } },
+            { $set: { "reactions.$.reaction": reaction } }
+        );
+    } else {
+        res = await pollsCol.updateOne(
+            { _id: pollId },
+            {
+                $push: {
+                    reactions: {
+                        _id: ObjectId(),
+                        user: userId,
+                        reaction: reaction
+                    }
+                }
+            }
+        );
+    }
+    if (!res.acknowledged || !res.modifiedCount)
+        throw 'Failed to add reaction.';
+};
+
 const voteOnPoll = async (pollId, userId, vote) => {
-    pollId = requireId(pollId, 'pollId');
-    if (!(await pollExists(pollId)))
-        throw 'Poll does not exist.';
-    userId = requireId(userId, 'userId');
-    if (!(await getUserById(userId)))
-        throw 'User does not exist.';
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
     vote = requireInteger(vote, 'vote');
     const poll = await getPollById(pollId);
     if (vote < 0 || vote >= poll.choices.length)
@@ -185,12 +247,7 @@ const voteOnPoll = async (pollId, userId, vote) => {
 };
 
 const addComment = async (pollId, userId, comment) => {
-    pollId = requireId(pollId, 'pollId');
-    if (!(await pollExists(pollId)))
-        throw 'Poll does not exist.';
-    userId = requireId(userId, 'userId');
-    if (!(await getUserById(userId)))
-        throw 'User does not exist.';
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
     comment = requireString(comment, 'comment');
 
     const pollsCol = await polls();
@@ -213,11 +270,14 @@ const addComment = async (pollId, userId, comment) => {
 
 module.exports = {
     addComment,
+    deleteReaction,
     getPollById,
     getPollInfoById,
     getPollResults,
+    getReaction,
     getVote,
     pollExists,
+    reactOnPoll,
     requirePoll,
     voteOnPoll
 };

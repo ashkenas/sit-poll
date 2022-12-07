@@ -8,6 +8,13 @@
     <span id="choice{{@index}}">{{this.votes}}</span>
 </div>
 {{/each}}
+<div id="reactions"> 
+    {{#each poll.reactions}}
+        <button{{#if (equals ../reaction this.reaction)}} class="reacted"{{/if}} data-reaction="{{this.reaction}}">
+            {{this.reaction}} <span class="count">{{this.count}}</span>
+        </button>
+    {{/each}}
+</div>
 <h2>Comments</h2>
 <form id="comment-form">
     <label for="comment">New Comment</label>
@@ -23,7 +30,6 @@
 {{/each}}
 <script>
 const showCommentError = errorManager('comment-error');
-
 handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => {
     const comment = formData.get('comment');
 
@@ -35,5 +41,74 @@ handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => 
     showCommentError(); // Hides error info if no error
 
     return { comment: comment };
+});
+
+const counts = {};
+const buttons = [...document.querySelectorAll('#reactions > button')].reduce((all, button) => {
+    const reaction = button.getAttribute('data-reaction');
+    all[reaction] = button;
+    counts[reaction] = button.getElementsByClassName('count')[0];
+    return all;
+}, {});
+
+// Make sure latency doesn't break up the order of reactions made
+const handleReaction = (() => {
+    let queue = [];
+    let handling = false;
+    return async (newReaction) => {
+        queue.push(newReaction);
+        if (handling) return;
+
+        handling = true;
+        while (queue.length) {
+            const reaction = queue.shift();
+            // See if we're changing the reaction or deleting it
+            if (buttons[reaction].classList.contains('reacted')) { // Delete
+                const response = await fetch('/polls/{{poll._id}}/reaction', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'DELETE'
+                });
+
+                if (!response.ok || !(await response.json()).success) {
+                    queue = [];
+                    alert('Failed to delete your reaction.');
+                } else {
+                    buttons[reaction].classList.remove('reacted');
+                    counts[reaction].innerText = +counts[reaction].innerText - 1;
+                }
+            } else { // Update
+                const response = await fetch('/polls/{{poll._id}}/reaction', {
+                    body: JSON.stringify({ reaction: reaction }),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                });
+
+                if (!response.ok || !(await response.json()).success) {
+                    queue = [];
+                    alert('Failed to update your reaction.');
+                } else {
+                    const oldReactionButton = document.querySelector('.reacted');
+                    if (oldReactionButton) {
+                        const oldReaction = oldReactionButton.getAttribute('data-reaction');
+                        buttons[oldReaction].classList.remove('reacted');
+                        counts[oldReaction].innerText = +counts[oldReaction].innerText - 1;
+                    }
+                    buttons[reaction].classList.add('reacted');
+                    counts[reaction].innerText = +counts[reaction].innerText + 1;
+                }
+            }
+        }
+        handling = false;
+    };
+})();
+
+Object.keys(buttons).forEach((reaction) => {
+    buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));
 });
 </script>

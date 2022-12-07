@@ -137,8 +137,9 @@ const validate = (schemaProperties, extraProperties) => {
     };
 };
 
+const validReactions = ['like', 'dislike'];
+
 module.exports = {
-    dataTypes,
     requireBoolean,
     requireDate,
     requireId,
@@ -146,5 +147,6 @@ module.exports = {
     requireNumber,
     requireOptions,
     requireString,
-    validate
+    validate,
+    validReactions
 };
