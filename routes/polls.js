@@ -66,6 +66,7 @@ router
         res.render('polls/results', {
             poll: poll,
             vote: vote,
+            userId: req.session.userId,
             reaction: await getReaction(req.params.id, req.session.userId),
             author: (await getUserById(poll.author)).display_name,
         });

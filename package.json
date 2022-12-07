@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/ashkenas/sit-poll#readme",
   "dependencies": {
+    "bulma": "^0.9.4",
     "express": "^4.18.2",
     "express-handlebars": "^6.0.6",
     "express-session": "^1.17.3",

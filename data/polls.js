@@ -146,7 +146,7 @@ const getPollResults = async (id) => {
                 pipeline: [
                     {
                         $project: {
-                            _id: 0,
+                            _id: 1,
                             display_name: 1
                         }
                     }
@@ -156,7 +156,11 @@ const getPollResults = async (id) => {
         },
         { $unwind: '$comments.user' },
         { $sort: { 'comments.date': -1 } }
-    ]).toArray()).map((comment) => stringifyId(comment.comments));
+    ]).toArray()).map((comment) => {
+        comment = stringifyId(comment.comments)
+        comment.user = stringifyId(comment.user);
+        return comment;
+    });
 
     return stringifyId(poll);
 };
