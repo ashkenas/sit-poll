@@ -1,30 +1,69 @@
-<header>
-<h1>{{poll.title}}</h1>
-<p>By <span>{{author}}</span></p>
-</header>
-{{#each poll.votes}}
-<div{{#if (equals ../vote @index)}} class="voted"{{/if}}>
-    <label for="choice{{@index}}">{{this.choice}}:</label>
-    <span id="choice{{@index}}">{{this.votes}}</span>
+<div class="section">
+    <div class="container">
+        <h1 class="title is-1">Results</h1>
+        <h2 class="title">{{poll.title}}</h1>
+        <p class="subtitle">By <span>{{author}}</span></p>
+        {{#each poll.votes}}
+            <div{{#if (equals ../vote @index)}} class="has-text-link"{{/if}}>
+                <label for="choice{{@index}}">{{this.choice}}:</label>
+                <span id="choice{{@index}}">{{this.votes}}</span>
+            </div>
+        {{/each}}
+        <div id="reactions"> 
+            {{#each poll.reactions}}
+                <button class="button is-outlined{{#if (equals ../reaction this.reaction)}} is-info{{/if}}" data-reaction="{{this.reaction}}">
+                    {{this.reaction}}&nbsp;<span class="count">{{this.count}}</span>
+                </button>
+            {{/each}}
+        </div>
+        <h3 class="title is-4">Comments</h3>
+        <div class="media">
+            <div class="media-content">
+                <form id="comment-form">
+                    <div class="field">
+                        <div class="control">
+                            <label class="label" for="comment">New Comment</label>
+                            <textarea class="textarea" id="comment" name="comment" placeholder="Add a comment..."></textarea>
+                        </div>
+                        <p id="comment-error" class="help is-danger error"></p>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <input class="button is-info" type="submit">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {{#each poll.comments}}
+        <div class="media">
+            <div class="media-content">
+                <div class="content">
+                <p>
+                    <strong>{{this.user.display_name}}</strong> <small>{{date this.date}}</small>
+                    <br>
+                    {{this.comment}}
+                </p>
+                </div>
+            </div>
+            {{#if (equals this.user._id ../userId)}}
+                <div class="media-right">
+                    <form method="POST" action="/polls/{{../poll._id}}/comments">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <input type="hidden" name="_id" value="{{this._id}}">
+                        <button class="delete" type="submit"></button>
+                    </form>
+                </div>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
 </div>
-{{/each}}
-<h2>Comments</h2>
-<form id="comment-form">
-    <label for="comment">New Comment</label>
-    <textarea id="comment" name="comment"></textarea>
-    <p id="comment-error" class="error"></p>
-    <input type="submit">
-</form>
-{{#each poll.comments}}
-<div>
-    <p><span>{{this.user.display_name}}</span> <span>{{date this.date}}</span></p>
-    <p>{{this.comment}}</p>
-</div>
-{{/each}}
 <script>
-const showCommentError = errorManager('comment-error');
+const reactedClass = "is-info";
 
-handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => {
+const showCommentError = errorManager('comment-error');
+handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comments', (formData) => {
     const comment = formData.get('comment');
 
     if (!comment || !comment.trim()) {
@@ -35,5 +74,74 @@ handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => 
     showCommentError(); // Hides error info if no error
 
     return { comment: comment };
+});
+
+const counts = {};
+const buttons = [...document.querySelectorAll('#reactions > button')].reduce((all, button) => {
+    const reaction = button.getAttribute('data-reaction');
+    all[reaction] = button;
+    counts[reaction] = button.getElementsByClassName('count')[0];
+    return all;
+}, {});
+
+// Make sure latency doesn't break up the order of reactions made
+const handleReaction = (() => {
+    let queue = [];
+    let handling = false;
+    return async (newReaction) => {
+        queue.push(newReaction);
+        if (handling) return;
+
+        handling = true;
+        while (queue.length) {
+            const reaction = queue.shift();
+            // See if we're changing the reaction or deleting it
+            if (buttons[reaction].classList.contains(reactedClass)) { // Delete
+                const response = await fetch('/polls/{{poll._id}}/reaction', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'DELETE'
+                });
+
+                if (!response.ok || !(await response.json()).success) {
+                    queue = [];
+                    alert('Failed to delete your reaction.');
+                } else {
+                    buttons[reaction].classList.remove(reactedClass);
+                    counts[reaction].innerText = +counts[reaction].innerText - 1;
+                }
+            } else { // Update
+                const response = await fetch('/polls/{{poll._id}}/reaction', {
+                    body: JSON.stringify({ reaction: reaction }),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                });
+
+                if (!response.ok || !(await response.json()).success) {
+                    queue = [];
+                    alert('Failed to update your reaction.');
+                } else {
+                    const oldReactionButton = document.getElementsByClassName(reactedClass)[0];
+                    if (oldReactionButton) {
+                        const oldReaction = oldReactionButton.getAttribute('data-reaction');
+                        buttons[oldReaction].classList.remove(reactedClass);
+                        counts[oldReaction].innerText = +counts[oldReaction].innerText - 1;
+                    }
+                    buttons[reaction].classList.add(reactedClass);
+                    counts[reaction].innerText = +counts[reaction].innerText + 1;
+                }
+            }
+        }
+        handling = false;
+    };
+})();
+
+Object.keys(buttons).forEach((reaction) => {
+    buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));
 });
 </script>

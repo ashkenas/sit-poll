@@ -1,3 +1,12 @@
+main {
+    border-top: 2px solid #f5f5f5;
+}
+
 p.error {
-    color: #FF0000;
+    display: none;
+}
+
+#reactions > button.is-info:focus:not(:hover) {
+    color: #3e8ed0;
+    background-color: white;
 }

@@ -1,9 +1,10 @@
 /*
  * App initialization and start-up.
  */
+const path = require('path');
 const express = require('express');
 const app = express();
-const static = express.static(__dirname + '/public');
+const static = express.static(path.join(__dirname, 'public'));
 const crypto = require('crypto');
 
 const configRoutes = require('./routes');
@@ -19,7 +20,7 @@ app.use(session({
     resave: true
 }));
 app.use((req, res, next) => { // Redirect if not logged in
-    if (req.path !== '/login' && !req.session.userId) {
+    if (req.path !== '/login' && !req.path.startsWith('/public/') && !req.session.userId) {
         if (req.method === 'GET') {
             req.session.redirect = req.originalUrl;
             res.redirect('/login');
@@ -27,6 +28,12 @@ app.use((req, res, next) => { // Redirect if not logged in
             res.status(403).json({ error: 'Not logged in.' });
         }
     } else next();
+});
+app.use((req, res, next) => {
+    if (req.method === 'POST' && req.body._method)
+        if (['PUT', 'DELETE', 'PATCH'].includes(req.body._method.toUpperCase()))
+            req.method = req.body._method;
+    next();
 });
 configRoutes(app);
 app.use((err, req, res, next) => { // Error middleware
