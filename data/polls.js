@@ -272,9 +272,40 @@ const addComment = async (pollId, userId, comment) => {
         throw 'Failed to add comment.';
 };
 
+const getComment = async (pollId, userId, commentId) => {
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
+    commentId = requireId(commentId, 'commentId');
+
+    const pollsCol = await polls();
+    const poll = await pollsCol.findOne(
+        { comments: { $elemMatch: { _id: commentId } } },
+        { project: { "comments.$": 1 } }
+    );
+    if (!poll) return null;
+    return poll.comments[0];
+};
+
+const deleteComment = async (pollId, userId, commentId) => {
+    [pollId, userId] = await requirePollAndUser(pollId, userId);
+    commentId = requireId(commentId, 'commentId');
+
+    if (!getComment(pollId, userId, commentId))
+        throw 'Comment does not exist.';
+
+    const pollsCol = await polls();
+    const res = await pollsCol.updateOne(
+        { comments: { $elemMatch: { _id: commentId } } },
+        { $pull: { comments: { _id: commentId } } }
+    );
+    if (!res.acknowledged || !res.modifiedCount)
+        throw 'Failed to delete comment.'
+};
+
 module.exports = {
     addComment,
+    deleteComment,
     deleteReaction,
+    getComment,
     getPollById,
     getPollInfoById,
     getPollResults,

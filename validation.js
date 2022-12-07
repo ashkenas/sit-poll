@@ -125,12 +125,12 @@ const validate = (schemaProperties, extraProperties) => {
 
         if (schemaProperties) {
             for(const prop of schemaProperties) // Validate schema properties
-                dataTypes[prop](req.body[prop], prop);
+                req.body[prop] = dataTypes[prop](req.body[prop], prop);
         }
 
         if (extraProperties) { // Validate extra properties
             for (const prop in extraProperties)
-                extraProperties[prop](req.body[prop], prop);
+                req.body.prop = extraProperties[prop](req.body[prop], prop);
         }
 
         next();

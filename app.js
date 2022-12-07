@@ -29,6 +29,12 @@ app.use((req, res, next) => { // Redirect if not logged in
         }
     } else next();
 });
+app.use((req, res, next) => {
+    if (req.method === 'POST' && req.body._method)
+        if (['PUT', 'DELETE', 'PATCH'].includes(req.body._method.toUpperCase()))
+            req.method = req.body._method;
+    next();
+});
 configRoutes(app);
 app.use((err, req, res, next) => { // Error middleware
     if (res.headersSent) return next(err);

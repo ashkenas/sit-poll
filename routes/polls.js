@@ -5,7 +5,7 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, deleteReaction, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, deleteComment, deleteReaction, getComment, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -73,16 +73,16 @@ router
     }));
 
 router
-    .route('/:id/comment')
+    .route('/:id/comments')
     .post(validate(['comment']), sync(async (req, res) => { // Create comment on poll
         await addComment(req.params.id, req.session.userId, req.body.comment);
         res.json({ redirect: path.join(req.originalUrl, '..', 'results') });
-    }));
-
-router
-    .route('/:id/comment/:commentId')
-    .delete(sync(async (req, res) => { // Delete comment on poll
-        notImplemented(res);
+    }))
+    .delete(validate(['_id']), sync(async (req, res) => { // Delete comment on poll
+        if (!(await getComment(req.params.id, req.session.userId, req.body._id)))
+            throw statusError(400, 'Comment does not exist, cannot delete.');
+        await deleteComment(req.params.id, req.session.userId, req.body._id);
+        res.redirect(`/polls/${req.params.id.toString()}/results`);
     }));
 
 router

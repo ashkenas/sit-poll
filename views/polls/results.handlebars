@@ -48,7 +48,8 @@
             </div>
             {{#if (equals this.user._id ../userId)}}
                 <div class="media-right">
-                    <form>
+                    <form method="POST" action="/polls/{{../poll._id}}/comments">
+                        <input type="hidden" name="_method" value="DELETE">
                         <input type="hidden" name="_id" value="{{this._id}}">
                         <button class="delete" type="submit"></button>
                     </form>
@@ -62,7 +63,7 @@
 const reactedClass = "is-info";
 
 const showCommentError = errorManager('comment-error');
-handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => {
+handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comments', (formData) => {
     const comment = formData.get('comment');
 
     if (!comment || !comment.trim()) {
