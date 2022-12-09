@@ -71,6 +71,18 @@ const requireDate = (date, name) => {
     return date;
 };
 
+const requireEmail = (email, name) => {
+    exists(email, name);
+    email = requireString(email, name).trim();
+    if(email.toLowerCase().endsWith('@stevens.edu')) {
+        const handle = email.substring(0, email.length - '@stevens.edu'.length + 1);
+        if(!/[a-zA-Z0-9.]/.test(handle)) {
+            throw statusError(400, `Field ${name} is not a valid email`);
+        }
+    }
+    return email.toLowerCase();
+}
+
 const dataTypes = {
     _id: requireId,
     email: requireString,
@@ -141,6 +153,7 @@ module.exports = {
     dataTypes,
     requireBoolean,
     requireDate,
+    requireEmail,
     requireId,
     requireInteger,
     requireNumber,
