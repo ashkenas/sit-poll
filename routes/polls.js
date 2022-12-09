@@ -5,14 +5,15 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, deleteComment, deleteReaction, getComment, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
 router
     .route('/')
     .get(sync(async (req, res) => { // View polls
-        notImplemented(res);
+        // Update this with an actual page
+        res.json(await getAllPollsInfo(req.session.userId));
     }))
     .post(sync(async (req, res) => { // Create poll
         notImplemented(res);
@@ -63,13 +64,24 @@ router
         const poll = await getPollResults(req.params.id);
         if (vote === null && poll.close_date > Date.now())
             return res.redirect(`/polls/${req.params.id.toString()}`);
-        res.render('polls/results', {
-            poll: poll,
-            vote: vote,
-            userId: req.session.userId,
-            reaction: await getReaction(req.params.id, req.session.userId),
-            author: (await getUserById(poll.author)).display_name,
-        });
+        if (req.accepts('html')) {
+            res.render('polls/results', {
+                poll: poll,
+                vote: vote,
+                userId: req.session.userId.toString(),
+                reaction: await getReaction(req.params.id, req.session.userId),
+                author: (await getUserById(poll.author)).display_name,
+            });
+        } else { // Requested via ajax, give json result
+            res.json({
+                votes: poll.votes,
+                reactions: poll.reactions,
+                comments: poll.comments,
+                vote: vote,
+                reaction: await getReaction(req.params.id, req.session.userId),
+                userId: req.session.userId.toString()
+            });
+        }
     }));
 
 router
@@ -79,8 +91,11 @@ router
         res.json({ redirect: path.join(req.originalUrl, '..', 'results') });
     }))
     .delete(validate(['_id']), sync(async (req, res) => { // Delete comment on poll
-        if (!(await getComment(req.params.id, req.session.userId, req.body._id)))
-            throw statusError(400, 'Comment does not exist, cannot delete.');
+        const comment = await getComment(req.params.id, req.session.userId, req.body._id);
+        if (!comment) throw statusError(400, 'Comment does not exist, cannot delete.');
+        if (!comment.user.equals(req.session.userId))
+            throw statusError(403, 'Cannot delete comment left by another user.');
+
         await deleteComment(req.params.id, req.session.userId, req.body._id);
         res.redirect(`/polls/${req.params.id.toString()}/results`);
     }));

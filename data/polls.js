@@ -7,7 +7,7 @@ const { getUserById } = require("./users");
 const pollExists = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
-    const poll = await pollsCol.findOne({ _id: id }, { project: { _id: 1 } });
+    const poll = await pollsCol.findOne({ _id: id }, { projection: { _id: 1 } });
     return poll !== null;
 };
 
@@ -71,12 +71,54 @@ const deleteReaction = async (pollId, userId) => {
         throw 'Failed to delete reaction.';
 };
 
+/**
+ * Returns all the polls a user can see.
+ * This includes rosters they're in, polls
+ * they made, and public polls.
+ * @param {string|ObjectId} userId The user's ID
+ * @returns {object[]}
+ */
+const getAllPollsInfo = async (userId) => {
+    userId = requireId(userId, 'userId');
+    const user = await getUserById(userId);
+    if (!user) throw 'User does not exist.';
+
+    const usersCol = await users();
+    const managers = await usersCol.find(
+        {
+            rosters: {
+                $elemMatch: {
+                    students: user.email
+                }
+            }
+        },
+        { 
+            projection: { "rosters.$": 1 }
+        }
+    ).toArray();
+    const personalPolls = managers.map(manager => manager.rosters[0].polls).flat();
+
+    const pollsCol = await polls();
+    const foundPolls = await pollsCol.find(
+        {
+            $or: [
+                { author: userId },
+                { public: true },
+                { _id: { $in: personalPolls } }
+            ]
+        },
+        { projection: { votes: 0, comments: 0, reactions: 0 } }
+    ).toArray();
+
+    return foundPolls.map(stringifyId);
+};
+
 const getPollInfoById = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
     const poll = await pollsCol.findOne(
         { _id: id },
-        { project: { votes: 0, comments: 0, reactions: 0 } }
+        { projection: { votes: 0, comments: 0, reactions: 0 } }
     );
     return poll ? stringifyId(poll) : null;
 };
@@ -98,7 +140,7 @@ const getPollResults = async (id) => {
     const pollsCol = await polls();
     const poll = await pollsCol.findOne(
         { _id: id },
-        { project: { votes: 0, reactions: 0 } }
+        { projection: { votes: 0, reactions: 0 } }
     );
     if (!poll) return null;
 
@@ -279,10 +321,10 @@ const getComment = async (pollId, userId, commentId) => {
     const pollsCol = await polls();
     const poll = await pollsCol.findOne(
         { comments: { $elemMatch: { _id: commentId } } },
-        { project: { "comments.$": 1 } }
+        { projection: { "comments.$": 1 } }
     );
     if (!poll) return null;
-    return poll.comments[0];
+    return stringifyId(poll.comments[0]);
 };
 
 const deleteComment = async (pollId, userId, commentId) => {
@@ -305,6 +347,7 @@ module.exports = {
     addComment,
     deleteComment,
     deleteReaction,
+    getAllPollsInfo,
     getComment,
     getPollById,
     getPollInfoById,
