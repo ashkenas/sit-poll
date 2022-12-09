@@ -38,7 +38,7 @@
                 </div>
             </div>
             {{#each poll.comments}}
-                <div class="media">
+                <div class="media" data-id="{{this._id}}">
                     <div class="media-content">
                         <div class="content">
                         <p>
@@ -83,6 +83,9 @@
 </template>
 <script>
 const commentTemplate = document.getElementById('comment-template').content.firstElementChild;
+const votesElement = document.getElementById('votes');
+const commentsElement = document.getElementById('comments');
+
 const reactedClass = "is-link";
 
 const showCommentError = errorManager('comment-error');
@@ -168,43 +171,35 @@ Object.keys(buttons).forEach((reaction) => {
     buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));
 });
 
-const votesElement = document.getElementById('votes');
-const commentsElement = document.getElementById('comments');
-setInterval(async() => {
-    const response = await fetch('', {
-        headers: {
-            'Accept': 'application/json'
-        }
-    });
-    if (!response.ok) return;
-    const { votes, reactions, comments, vote, reaction, userId } = await response.json();
-
-    votesElement.innerHTML = '';
-    votes.forEach((v, i) => {
-        const temp = document.createElement('P');
-        if (i === vote)
-            temp.classList.add('has-text-link');
-        temp.innerText = `${v.choice}: ${v.votes}`;
-        votesElement.append(temp);
-    });
-
-    reactions.forEach(r => counts[r.reaction].innerText = r.count);
-    const oldReactionButton = document.getElementsByClassName(reactedClass)[0];
-    if (oldReactionButton)
-        buttons[oldReactionButton.getAttribute('data-reaction')].classList.remove(reactedClass);
-    if (reaction)
-        buttons[reaction].classList.add(reactedClass);
-
-    commentsElement.querySelectorAll('.media:not(:first-child)').forEach(media => media.remove());
-    comments.forEach(comment => {
+const ws = new WebSocket('ws://' + location.host + location.pathname);
+ws.addEventListener('message', event => {
+    const {type, data} = JSON.parse(event.data);
+    if (type === 'newComment') {
         const temp = commentTemplate.cloneNode(true);
-        temp.querySelector('strong').innerText = comment.user.display_name;
-        temp.querySelector('small').innerText = commentDate(comment.date);
-        temp.querySelector('p').append(document.createTextNode(comment.comment));
-        temp.querySelector('input[name="_id"]').value = comment._id;
-        if (comment.user._id !== userId)
+        temp.setAttribute('data-id', data._id);
+        temp.querySelector('strong').innerText = data.display_name;
+        temp.querySelector('small').innerText = commentDate(data.date);
+        temp.querySelector('p').append(document.createTextNode(data.comment));
+        if (data.user !== '{{userId}}')
             temp.querySelector('.media-right').remove();
-        commentsElement.append(temp);
-    });
-}, 10 * 1000);
+        else
+            temp.querySelector('input[name="_id"]').value = data._id;
+        commentsElement.firstElementChild.after(temp);
+    } else if (type === 'deleteComment') {
+        document.querySelector(`[data-id="${data}"]`).remove();
+    } else if (type === 'votes') {
+        votesElement.innerHTML = '';
+        data.forEach((v, i) => {
+            const temp = document.createElement('P');
+            if (i === {{vote}})
+                temp.classList.add('has-text-link');
+            temp.innerText = `${v.choice}: ${v.votes}`;
+            votesElement.append(temp);
+        });
+    } else if (type === 'reactions') {
+        data.forEach(r => counts[r.reaction].innerText = r.count);
+    } else if (type === 'deleteReaction') {
+        counts[data].innerText = +counts[data].innerText - 1;
+    }
+});
 </script>

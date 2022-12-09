@@ -13,7 +13,7 @@ router
     .post(sync(async (req, res) => { // Validate credentials, setup session
         // Placeholder, login with just a number
         const user = await getUserByEmail(`student${req.body.num}@stevens.edu`);
-        req.session.userId = ObjectId(user._id);
+        req.session.userId = user._id;
         // Redirect to original destination
         res.redirect(req.session.redirect || '/');
     }));
