@@ -296,22 +296,22 @@ const addComment = async (pollId, userId, comment) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
     comment = requireString(comment, 'comment');
 
+    const newComment = {
+        _id: ObjectId(),
+        user: userId,
+        comment: comment,
+        date: new Date()
+    };
+
     const pollsCol = await polls();
     const res = await pollsCol.updateOne(
         { _id: pollId },
-        {
-            $push: {
-                comments: {
-                    _id: ObjectId(),
-                    user: userId,
-                    comment: comment,
-                    date: new Date()
-                }
-            }
-        }
+        { $push: { comments: newComment } }
     );
     if (!res.acknowledged || !res.modifiedCount)
         throw 'Failed to add comment.';
+
+    return newComment;
 };
 
 const getComment = async (pollId, userId, commentId) => {

@@ -40,6 +40,9 @@ router
         if (poll.close_date < Date.now())
             throw statusError(403, 'Poll is closed, cannot vote.');
         await voteOnPoll(req.params.id, req.session.userId, vote);
+        res.updateClients(req.params.id.toString(), 'votes',
+            (await getPollResults(req.params.id)).votes
+        );
         // Now that the vote has been processed, tell the webpage to redirect the user
         res.json({ redirect: path.join(req.originalUrl, 'results') });
     }))
@@ -68,18 +71,9 @@ router
             res.render('polls/results', {
                 poll: poll,
                 vote: vote,
-                userId: req.session.userId.toString(),
+                userId: req.session.userId,
                 reaction: await getReaction(req.params.id, req.session.userId),
                 author: (await getUserById(poll.author)).display_name,
-            });
-        } else { // Requested via ajax, give json result
-            res.json({
-                votes: poll.votes,
-                reactions: poll.reactions,
-                comments: poll.comments,
-                vote: vote,
-                reaction: await getReaction(req.params.id, req.session.userId),
-                userId: req.session.userId.toString()
             });
         }
     }));
@@ -87,7 +81,10 @@ router
 router
     .route('/:id/comments')
     .post(validate(['comment']), sync(async (req, res) => { // Create comment on poll
-        await addComment(req.params.id, req.session.userId, req.body.comment);
+        res.updateClients(req.params.id.toString(), 'newComment', {
+            ...(await addComment(req.params.id, req.session.userId, req.body.comment)),
+            display_name: (await getUserById(req.session.userId)).display_name
+        });
         res.json({ redirect: path.join(req.originalUrl, '..', 'results') });
     }))
     .delete(validate(['_id']), sync(async (req, res) => { // Delete comment on poll
@@ -97,6 +94,7 @@ router
             throw statusError(403, 'Cannot delete comment left by another user.');
 
         await deleteComment(req.params.id, req.session.userId, req.body._id);
+        res.updateClients(req.params.id.toString(), 'deleteComment', req.body._id.toString());
         res.redirect(`/polls/${req.params.id.toString()}/results`);
     }));
 
@@ -106,12 +104,17 @@ router
         if (!validReactions.includes(req.body.reaction))
             throw statusError(400, 'Invalid reaction.');
         await reactOnPoll(req.params.id, req.session.userId, req.body.reaction)
+        res.updateClients(req.params.id.toString(), 'reactions',
+            (await getPollResults(req.params.id)).reactions
+        );
         res.json({ success: true });
     }))
     .delete(sync(async (req, res) => { // Delete reaction on poll
-        if (await getReaction(req.params.id, req.session.userId) === null)
+        const reaction = await getReaction(req.params.id, req.session.userId);
+        if (reaction === null)
             throw statusError(403, 'No reaction to delete.');
         await deleteReaction(req.params.id, req.session.userId);
+        res.updateClients(req.params.id.toString(), 'deleteReaction', reaction);
         res.json({ success: true });
     }));
 
