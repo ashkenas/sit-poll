@@ -3,64 +3,87 @@
         <h1 class="title is-1">Results</h1>
         <h2 class="title">{{poll.title}}</h1>
         <p class="subtitle">By <span>{{author}}</span></p>
-        {{#each poll.votes}}
-            <div{{#if (equals ../vote @index)}} class="has-text-link"{{/if}}>
-                <label for="choice{{@index}}">{{this.choice}}:</label>
-                <span id="choice{{@index}}">{{this.votes}}</span>
-            </div>
-        {{/each}}
+        <div id="votes">
+            {{#each poll.votes}}
+                <p{{#if (equals ../vote @index)}} class="has-text-link"{{/if}}>
+                    {{this.choice}}: {{this.votes}}
+                </p>
+            {{/each}}
+        </div>
         <div id="reactions"> 
             {{#each poll.reactions}}
-                <button class="button is-outlined{{#if (equals ../reaction this.reaction)}} is-info{{/if}}" data-reaction="{{this.reaction}}">
+                <button class="button is-outlined{{#if (equals ../reaction this.reaction)}} is-link{{/if}}" data-reaction="{{this.reaction}}">
                     {{this.reaction}}&nbsp;<span class="count">{{this.count}}</span>
                 </button>
             {{/each}}
         </div>
         <h3 class="title is-4">Comments</h3>
-        <div class="media">
-            <div class="media-content">
-                <form id="comment-form">
-                    <div class="field">
-                        <div class="control">
-                            <label class="label" for="comment">New Comment</label>
-                            <textarea class="textarea" id="comment" name="comment" placeholder="Add a comment..."></textarea>
+        <div id="comments">
+            <div class="media">
+                <div class="media-content">
+                    <form id="comment-form">
+                        <div class="field">
+                            <div class="control">
+                                <label class="label" for="comment">New Comment</label>
+                                <textarea class="textarea" id="comment" name="comment" placeholder="Add a comment..."></textarea>
+                            </div>
+                            <p id="comment-error" class="help is-danger error"></p>
                         </div>
-                        <p id="comment-error" class="help is-danger error"></p>
-                    </div>
-                    <div class="field">
-                        <div class="control">
-                            <input class="button is-info" type="submit">
+                        <div class="field">
+                            <div class="control">
+                                <input class="button is-info" type="submit">
+                            </div>
                         </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-        {{#each poll.comments}}
-        <div class="media">
-            <div class="media-content">
-                <div class="content">
-                <p>
-                    <strong>{{this.user.display_name}}</strong> <small>{{date this.date}}</small>
-                    <br>
-                    {{this.comment}}
-                </p>
-                </div>
-            </div>
-            {{#if (equals this.user._id ../userId)}}
-                <div class="media-right">
-                    <form method="POST" action="/polls/{{../poll._id}}/comments">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <input type="hidden" name="_id" value="{{this._id}}">
-                        <button class="delete" type="submit"></button>
                     </form>
                 </div>
-            {{/if}}
+            </div>
+            {{#each poll.comments}}
+                <div class="media">
+                    <div class="media-content">
+                        <div class="content">
+                        <p>
+                            <strong>{{this.user.display_name}}</strong> <small>{{date this.date}}</small>
+                            <br>
+                            {{this.comment}}
+                        </p>
+                        </div>
+                    </div>
+                    {{#if (equals this.user._id ../userId)}}
+                        <div class="media-right">
+                            <form method="POST" action="/polls/{{../poll._id}}/comments">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <input type="hidden" name="_id" value="{{this._id}}">
+                                <button aria-label="delete comment" class="delete" type="submit"></button>
+                            </form>
+                        </div>
+                    {{/if}}
+                </div>
+            {{/each}}
         </div>
-        {{/each}}
     </div>
 </div>
+<template id="comment-template">
+    <div class="media">
+        <div class="media-content">
+            <div class="content">
+            <p>
+                <strong></strong> <small></small>
+                <br>
+            </p>
+            </div>
+        </div>
+        <div class="media-right">
+            <form method="POST" action="/polls/{{poll._id}}/comments">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_id" value="">
+                <button aria-label="delete comment" class="delete" type="submit"></button>
+            </form>
+        </div>
+    </div>
+</template>
 <script>
-const reactedClass = "is-info";
+const commentTemplate = document.getElementById('comment-template').content.firstElementChild;
+const reactedClass = "is-link";
 
 const showCommentError = errorManager('comment-error');
 handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comments', (formData) => {
@@ -144,4 +167,44 @@ const handleReaction = (() => {
 Object.keys(buttons).forEach((reaction) => {
     buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));
 });
+
+const votesElement = document.getElementById('votes');
+const commentsElement = document.getElementById('comments');
+setInterval(async() => {
+    const response = await fetch('', {
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+    if (!response.ok) return;
+    const { votes, reactions, comments, vote, reaction, userId } = await response.json();
+
+    votesElement.innerHTML = '';
+    votes.forEach((v, i) => {
+        const temp = document.createElement('P');
+        if (i === vote)
+            temp.classList.add('has-text-link');
+        temp.innerText = `${v.choice}: ${v.votes}`;
+        votesElement.append(temp);
+    });
+
+    reactions.forEach(r => counts[r.reaction].innerText = r.count);
+    const oldReactionButton = document.getElementsByClassName(reactedClass)[0];
+    if (oldReactionButton)
+        buttons[oldReactionButton.getAttribute('data-reaction')].classList.remove(reactedClass);
+    if (reaction)
+        buttons[reaction].classList.add(reactedClass);
+
+    commentsElement.querySelectorAll('.media:not(:first-child)').forEach(media => media.remove());
+    comments.forEach(comment => {
+        const temp = commentTemplate.cloneNode(true);
+        temp.querySelector('strong').innerText = comment.user.display_name;
+        temp.querySelector('small').innerText = commentDate(comment.date);
+        temp.querySelector('p').append(document.createTextNode(comment.comment));
+        temp.querySelector('input[name="_id"]').value = comment._id;
+        if (comment.user._id !== userId)
+            temp.querySelector('.media-right').remove();
+        commentsElement.append(temp);
+    });
+}, 10 * 1000);
 </script>

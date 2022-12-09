@@ -29,3 +29,14 @@ const handleForm = async (formId, method, action, handler) => {
             window.location = responseData.redirect;
     });
 };
+
+const commentDate = (d) => {
+    const today = (new Date()).toDateString();
+    const comp = new Date(d);
+    if (today !== comp.toDateString())
+        return comp.toLocaleDateString();
+    const hour = comp.getHours();
+    const strHour = hour % 12 === 0 ? 12 : hour % 12;
+    const strMinutes = comp.getMinutes().toString().padStart(2, '0');
+    return `${strHour}:${strMinutes} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
