@@ -88,12 +88,12 @@ router
         res.json({ redirect: path.join(req.originalUrl, '..', 'results') });
     }))
     .delete(validate(['_id']), sync(async (req, res) => { // Delete comment on poll
-        const comment = await getComment(req.params.id, req.session.userId, req.body._id);
+        const comment = await getComment(req.body._id);
         if (!comment) throw statusError(400, 'Comment does not exist, cannot delete.');
         if (!comment.user.equals(req.session.userId))
             throw statusError(403, 'Cannot delete comment left by another user.');
 
-        await deleteComment(req.params.id, req.session.userId, req.body._id);
+        await deleteComment(req.body._id);
         res.updateClients(req.params.id.toString(), 'deleteComment', req.body._id.toString());
         res.redirect(`/polls/${req.params.id.toString()}/results`);
     }));
