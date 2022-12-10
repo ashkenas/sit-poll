@@ -81,7 +81,8 @@ app.engine('handlebars', exphbs.engine({
             const strHour = hour % 12 === 0 ? 12 : hour % 12;
             const strMinutes = comp.getMinutes().toString().padStart(2, '0');
             return `${strHour}:${strMinutes} ${hour >= 12 ? 'PM' : 'AM'}`;
-        }
+        },
+        json: (data) => JSON.stringify(data, null, 4)
     }
 }));
 app.set('view engine', 'handlebars');

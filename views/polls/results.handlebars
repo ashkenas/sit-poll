@@ -1,19 +1,13 @@
 <div class="section">
-    <div class="container">
+    <div class="container is-max-desktop">
         <h1 class="title is-1">Results</h1>
         <h2 class="title">{{poll.title}}</h1>
         <p class="subtitle">By <span>{{author}}</span></p>
-        <div id="votes">
-            {{#each poll.votes}}
-                <p{{#if (equals ../vote @index)}} class="has-text-link"{{/if}}>
-                    {{this.choice}}: {{this.votes}}
-                </p>
-            {{/each}}
-        </div>
-        <div id="reactions"> 
+        <div id="votes" style="margin-bottom:1rem;"></div>
+        <div id="reactions" class="buttons"> 
             {{#each poll.reactions}}
-                <button class="button is-outlined{{#if (equals ../reaction this.reaction)}} is-link{{/if}}" data-reaction="{{this.reaction}}">
-                    {{this.reaction}}&nbsp;<span class="count">{{this.count}}</span>
+                <button class="button is-outlined{{#if (equals ../reaction this.reaction)}} is-link{{/if}}" data-reaction="{{this.reaction}}" aria-label="{{this.reaction}}">
+                    {{this.label}}&nbsp;<span class="count">{{this.count}}</span>
                 </button>
             {{/each}}
         </div>
@@ -24,8 +18,7 @@
                     <form id="comment-form">
                         <div class="field">
                             <div class="control">
-                                <label class="label" for="comment">New Comment</label>
-                                <textarea class="textarea" id="comment" name="comment" placeholder="Add a comment..."></textarea>
+                                <textarea class="textarea" id="comment" name="comment" aria-label="new comment" placeholder="Add a comment..."></textarea>
                             </div>
                             <p id="comment-error" class="help is-danger error"></p>
                         </div>
@@ -62,6 +55,20 @@
         </div>
     </div>
 </div>
+<template id="vote-template">
+    <div>
+        <div class="media">
+            <div class="media-left">
+                <label class="label"></label>
+            </div>
+            <div class="media-content"></div>
+            <div class="media-right">
+                <p></p>
+            </div>
+        </div>
+        <progress class="progress"></progress>
+    </div>
+</template>
 <template id="comment-template">
     <div class="media">
         <div class="media-content">
@@ -82,6 +89,7 @@
     </div>
 </template>
 <script>
+const voteTemplate = document.getElementById('vote-template').content.firstElementChild;
 const commentTemplate = document.getElementById('comment-template').content.firstElementChild;
 const votesElement = document.getElementById('votes');
 const commentsElement = document.getElementById('comments');
@@ -171,6 +179,21 @@ Object.keys(buttons).forEach((reaction) => {
     buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));
 });
 
+const renderVotes = (votes) => {
+    votes.forEach((v, i) => {
+        const temp = voteTemplate.cloneNode(true);
+        const progress = temp.querySelector('progress');
+        progress.value = v.ratio;
+        progress.classList.add(`is-${i === {{vote}} ? 'link' : 'info'}`);
+        progress.id = `choice${i}`;
+        const label = temp.querySelector('label');
+        label.innerText = v.choice;
+        label.for = `choice${i}`;
+        temp.querySelector('p').innerText = `${v.votes} (${Math.floor(v.ratio * 100)}%)`;
+        votesElement.append(temp);
+    });
+};
+
 const ws = new WebSocket('ws://' + location.host + location.pathname);
 ws.addEventListener('message', event => {
     const {type, data} = JSON.parse(event.data);
@@ -189,17 +212,13 @@ ws.addEventListener('message', event => {
         document.querySelector(`[data-id="${data}"]`).remove();
     } else if (type === 'votes') {
         votesElement.innerHTML = '';
-        data.forEach((v, i) => {
-            const temp = document.createElement('P');
-            if (i === {{vote}})
-                temp.classList.add('has-text-link');
-            temp.innerText = `${v.choice}: ${v.votes}`;
-            votesElement.append(temp);
-        });
+        renderVotes(data);
     } else if (type === 'reactions') {
         data.forEach(r => counts[r.reaction].innerText = r.count);
     } else if (type === 'deleteReaction') {
         counts[data].innerText = +counts[data].innerText - 1;
     }
 });
+
+renderVotes({{{json poll.votes}}});
 </script>

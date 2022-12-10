@@ -180,17 +180,23 @@ const getPollResults = async (id) => {
     );
     if (!poll) return null;
 
+    let total = 0;
     const votes = (await pollsCol.aggregate([
         { $match: { _id: id } },
         { $project: { _id: 0, votes: 1 } },
         { $unwind: { path: '$votes' } },
         { $group: { _id: '$votes.vote', count: { $count: {} } } }
-    ]).toArray()).reduce((prev, curr) => (prev[poll.choices[curr._id]] = curr.count, prev), {});
+    ]).toArray()).reduce((prev, curr) => {
+        total += curr.count;
+        prev[poll.choices[curr._id]] = curr.count;
+        return prev;
+    }, {});
 
     poll.votes = poll.choices.map((choice) => {
         return {
             choice: choice,
-            votes: votes[choice] || 0
+            votes: votes[choice] || 0,
+            ratio: total ? (votes[choice] || 0) / total : 0
         };
     });
 
@@ -201,10 +207,11 @@ const getPollResults = async (id) => {
         { $group: { _id: '$reactions.reaction', count: { $count: {} } } }
     ]).toArray()).reduce((prev, curr) => (prev[curr._id] = curr.count, prev), {});
 
-    poll.reactions = validReactions.map((reaction) => {
+    poll.reactions = Object.keys(validReactions).map((reaction) => {
         return {
             reaction: reaction,
-            count: reactions[reaction] || 0
+            count: reactions[reaction] || 0,
+            label: validReactions[reaction]
         };
     });
 
@@ -281,7 +288,7 @@ const getVote = async (pollId, userId) => {
 const reactOnPoll = async (pollId, userId, reaction) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
     reaction = requireString(reaction, 'reaction').toLowerCase();
-    if (!(validReactions.includes(reaction)))
+    if (!(Object.keys(validReactions).includes(reaction)))
         throw 'Invalid reaction.'
 
     const poll = await getPollById(pollId);
