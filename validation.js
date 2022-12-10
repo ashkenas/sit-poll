@@ -137,7 +137,10 @@ const validate = (schemaProperties, extraProperties) => {
     };
 };
 
-const validReactions = ['like', 'dislike'];
+const validReactions = {
+    like: '👍',
+    dislike: '👎'
+};
 
 module.exports = {
     requireBoolean,
