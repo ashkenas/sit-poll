@@ -4,6 +4,11 @@ const { stringifyId, statusError, sync } = require("../helpers");
 const { requireId, requireInteger, requireString, validReactions } = require("../validation");
 const { getUserById } = require("./users");
 
+/**
+ * Checks if a poll exists
+ * @param {string|ObjectId} id The poll's ID
+ * @returns {Promise<bool>} If the poll exists
+ */
 const pollExists = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
@@ -49,6 +54,13 @@ const requirePoll = (id) => sync(async (req, res, next) => {
     throw statusError(403, 'Permission denied.');
 });
 
+/**
+ * Checks for the validity and existence of both the
+ * given poll and user.
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ * @returns {Promise<ObjectId[]>} An array with both IDs
+ */
 const requirePollAndUser = async (pollId, userId) => {
     pollId = requireId(pollId, 'pollId');
     if (!(await pollExists(pollId)))
@@ -59,6 +71,12 @@ const requirePollAndUser = async (pollId, userId) => {
     return [pollId, userId];
 };
 
+/**
+ * Deletes a reaction from a poll made by a
+ * specific user.
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ */
 const deleteReaction = async (pollId, userId) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
 
@@ -76,7 +94,7 @@ const deleteReaction = async (pollId, userId) => {
  * This includes rosters they're in, polls
  * they made, and public polls.
  * @param {string|ObjectId} userId The user's ID
- * @returns {object[]}
+ * @returns {Promise<object[]>}
  */
 const getAllPollsInfo = async (userId) => {
     userId = requireId(userId, 'userId');
@@ -113,6 +131,12 @@ const getAllPollsInfo = async (userId) => {
     return foundPolls.map(stringifyId);
 };
 
+/**
+ * Gets the information for a poll. This does
+ * not include votes, reactions, or comments.
+ * @param {string|ObjectId} id The poll's ID
+ * @returns {Promise<object>} The poll information
+ */
 const getPollInfoById = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
@@ -123,6 +147,12 @@ const getPollInfoById = async (id) => {
     return poll ? stringifyId(poll) : null;
 };
 
+
+/**
+ * Gets a poll.
+ * @param {string|ObjectId} id The poll's ID
+ * @returns {Promise<object>} The poll
+ */
 const getPollById = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
@@ -135,6 +165,12 @@ const getPollById = async (id) => {
     return stringifyId(poll);
 };
 
+/**
+ * Gets the info and results for a poll. Anonymizes
+ * votes and reactions by aggregating them.
+ * @param {string|ObjectId} id The poll's ID
+ * @returns {Promise<object>} The poll info and results
+ */
 const getPollResults = async (id) => {
     id = requireId(id, 'id');
     const pollsCol = await polls();
@@ -207,6 +243,12 @@ const getPollResults = async (id) => {
     return stringifyId(poll);
 };
 
+/**
+ * Gets a user's reaction on a specific poll.
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ * @returns {Promise<string>} The reaction
+ */
 const getReaction = async (pollId, userId) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
 
@@ -215,6 +257,12 @@ const getReaction = async (pollId, userId) => {
     return reaction ? reaction.reaction : null;
 };
 
+/**
+ * Gets a user's vote on a specific poll
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ * @returns {Promise<number>} The index of the user's choice
+ */
 const getVote = async (pollId, userId) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
 
@@ -223,6 +271,13 @@ const getVote = async (pollId, userId) => {
     return vote ? vote.vote : null;
 };
 
+/**
+ * Adds a reaction to a poll for a user.
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ * @param {string} reaction The reaction 
+ * @returns {Promise<>} Nothing
+ */
 const reactOnPoll = async (pollId, userId, reaction) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
     reaction = requireString(reaction, 'reaction').toLowerCase();
@@ -258,6 +313,13 @@ const reactOnPoll = async (pollId, userId, reaction) => {
         throw 'Failed to add reaction.';
 };
 
+/**
+ * Adds a vote to a poll for a user.
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ * @param {number} vote The index of the choice to vote for 
+ * @returns {Promise<>} Nothing
+ */
 const voteOnPoll = async (pollId, userId, vote) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
     vote = requireInteger(vote, 'vote');
@@ -292,6 +354,13 @@ const voteOnPoll = async (pollId, userId, vote) => {
         throw 'Failed to cast vote.';
 };
 
+/**
+ * Adds a comment to a poll for a user.
+ * @param {string|ObjectId} pollId The poll's ID
+ * @param {string|ObjectId} userId The user's ID
+ * @param {string} comment The comment text 
+ * @returns {Promise<>} Nothing
+ */
 const addComment = async (pollId, userId, comment) => {
     [pollId, userId] = await requirePollAndUser(pollId, userId);
     comment = requireString(comment, 'comment');
@@ -314,8 +383,12 @@ const addComment = async (pollId, userId, comment) => {
     return newComment;
 };
 
-const getComment = async (pollId, userId, commentId) => {
-    [pollId, userId] = await requirePollAndUser(pollId, userId);
+/**
+ * Gets a comment by ID
+ * @param {string|ObjectId} commentId The comments's ID
+ * @returns {Promise<>} Nothing
+ */
+const getComment = async (commentId) => {
     commentId = requireId(commentId, 'commentId');
 
     const pollsCol = await polls();
@@ -327,11 +400,15 @@ const getComment = async (pollId, userId, commentId) => {
     return stringifyId(poll.comments[0]);
 };
 
-const deleteComment = async (pollId, userId, commentId) => {
-    [pollId, userId] = await requirePollAndUser(pollId, userId);
+/**
+ * Deletes a comment by ID
+ * @param {string|ObjectId} commentId The comments's ID
+ * @returns {Promise<>} Nothing
+ */
+const deleteComment = async (commentId) => {
     commentId = requireId(commentId, 'commentId');
 
-    if (!getComment(pollId, userId, commentId))
+    if (!getComment(commentId))
         throw 'Comment does not exist.';
 
     const pollsCol = await polls();
