@@ -1,0 +1,29 @@
+<h1>Rosters</h1>
+
+<a href="/rosters/createRoster">Create new roster</a>
+
+{{#if rosters.length}}
+  {{#each rosters}}
+    <table>
+      <caption>{{this.label}}</caption>
+      <tr>
+        <th>Students</th>
+        <th>Status</th>
+      </tr>
+      {{#each this.students}}
+        <tr>
+          <td>{{this}}</td>
+        </tr>
+      {{/each}}
+      {{#each this.assistants}}
+        <tr>
+          <td>{{this}}</td>
+          <td>TA</td>
+        </tr>
+      {{/each}}
+    </table>
+
+  {{/each}}
+{{else}}
+  <p>No rosters exist yet</p>
+{{/if}}

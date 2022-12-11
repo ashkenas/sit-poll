@@ -1,0 +1,18 @@
+<h1>Create New Roster</h1>
+
+<form id="create-roster-form" method="POST" action="/rosters/createRoster">
+  <label id="rosterLabel" for="titleInput">Title:</label><br>
+  <input type="text" placeholder="Roster Name" id="titleInput" name="titleInput" required><br>
+
+  <label id="studentLabel" for="studentEmailInput">Student Emails (separated by commas):</label><br>
+  <input type="email" placeholder="student@stevens.edu" id="studentEmailInput" name="studentEmailInput" pattern=".+@stevens\.edu" multiple required><br>
+
+  {{!--todo <input type="file" id="file" name="filename" accept=".csv"><br> --}}
+
+  <label id="assistantLabel" for="assistantEmailInput">Assistants:</label><br>
+  <input type="email" placeholder="assistant@stevens.edu" id="assistantEmailInput" name="assistantEmailInput" multiple><br>
+  
+  <button type="submit" id="submit">Submit</button>
+</form>
+
+{{!-- <script src='../public/js/rosterForm.js'></script> --}}
