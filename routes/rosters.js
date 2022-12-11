@@ -13,7 +13,7 @@ router
     .route('/')
     .get(sync(async (req, res) => { // View rosters
         //todo: render handlebar of rosters for user
-        //const user = getUserById(req.session.user)
+        //const user = getUserById(req.session.userId)
         res.render('rosters/rosters' /* pass relevant information */);
     }))
     .post(sync(async (req, res) => { // Create roster

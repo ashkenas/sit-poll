@@ -1,13 +1,25 @@
-<h1>{{poll.title}}</h1>
-<h2>By {{author}}</h2>
-<form id="vote-form">
-    {{#each poll.choices}}
-        <input type="radio" id="vote{{@index}}" name="vote" value="{{@index}}" {{#if (equals ../lastVote @index)}}checked{{/if}}>
-        <label for="vote{{@index}}">{{this}}</label>
-    {{/each}}
-    <p id="options-error" class="error"></p>
-    <input type="submit" value="Vote">
-</form>
+<div class="section">
+    <div class="container">
+        <h1 class="title">{{poll.title}}</h1>
+        <p class="subtitle">By {{author}}</p>
+        <form id="vote-form">
+            <div class="field">
+                <div class="control">
+                    {{#each poll.choices}}
+                        <input type="radio" id="vote{{@index}}" name="vote" value="{{@index}}" {{#if (equals ../lastVote @index)}}checked{{/if}}>
+                        <label for="vote{{@index}}">{{this}}</label>
+                    {{/each}}
+                </div>
+                <p id="options-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <div class="control">
+                    <input class="button is-info" type="submit" value="{{#if lastVote}}Update {{/if}}Vote">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
 const showVoteError = errorManager('options-error');
 

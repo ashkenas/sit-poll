@@ -62,6 +62,7 @@ const deleteRoster = async (rosterId) => {
   return {deleted: 'true'};
 };
 
+//todo: update to make roster how we want it; would then have to also update removePersonFromRoster
 const addPersonToRoster = async (rosterId, email, category) => {
   rosterId = requireId(rosterId, 'roster id');
   email = requireEmail(email, 'email').trim().toLowerCase();

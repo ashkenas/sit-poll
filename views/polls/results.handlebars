@@ -1,30 +1,103 @@
-<header>
-<h1>{{poll.title}}</h1>
-<p>By <span>{{author}}</span></p>
-</header>
-{{#each poll.votes}}
-<div{{#if (equals ../vote @index)}} class="voted"{{/if}}>
-    <label for="choice{{@index}}">{{this.choice}}:</label>
-    <span id="choice{{@index}}">{{this.votes}}</span>
+<div class="section">
+    <div class="container is-max-desktop">
+        <h1 class="title is-1">Results</h1>
+        <h2 class="title">{{poll.title}}</h1>
+        <p class="subtitle">By <span>{{author}}</span></p>
+        <div id="votes" style="margin-bottom:1rem;"></div>
+        <div id="reactions" class="buttons"> 
+            {{#each poll.reactions}}
+                <button class="button is-outlined{{#if (equals ../reaction this.reaction)}} is-link{{/if}}" data-reaction="{{this.reaction}}" aria-label="{{this.reaction}}">
+                    {{this.label}}&nbsp;<span class="count">{{this.count}}</span>
+                </button>
+            {{/each}}
+        </div>
+        <h3 class="title is-4">Comments</h3>
+        <div id="comments">
+            <div class="media">
+                <div class="media-content">
+                    <form id="comment-form">
+                        <div class="field">
+                            <div class="control">
+                                <textarea class="textarea" id="comment" name="comment" aria-label="new comment" placeholder="Add a comment..."></textarea>
+                            </div>
+                            <p id="comment-error" class="help is-danger error"></p>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <input class="button is-info" type="submit">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {{#each poll.comments}}
+                <div class="media" data-id="{{this._id}}">
+                    <div class="media-content">
+                        <div class="content">
+                        <p>
+                            <strong>{{this.user.display_name}}</strong> <small>{{date this.date}}</small>
+                            <br>
+                            {{this.comment}}
+                        </p>
+                        </div>
+                    </div>
+                    {{#if (equals this.user._id ../userId)}}
+                        <div class="media-right">
+                            <form method="POST" action="/polls/{{../poll._id}}/comments">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <input type="hidden" name="_id" value="{{this._id}}">
+                                <button aria-label="delete comment" class="delete" type="submit"></button>
+                            </form>
+                        </div>
+                    {{/if}}
+                </div>
+            {{/each}}
+        </div>
+    </div>
 </div>
-{{/each}}
-<h2>Comments</h2>
-<form id="comment-form">
-    <label for="comment">New Comment</label>
-    <textarea id="comment" name="comment"></textarea>
-    <p id="comment-error" class="error"></p>
-    <input type="submit">
-</form>
-{{#each poll.comments}}
-<div>
-    <p><span>{{this.user.display_name}}</span> <span>{{date this.date}}</span></p>
-    <p>{{this.comment}}</p>
-</div>
-{{/each}}
+<template id="vote-template">
+    <div>
+        <div class="media">
+            <div class="media-left">
+                <label class="label"></label>
+            </div>
+            <div class="media-content"></div>
+            <div class="media-right">
+                <p></p>
+            </div>
+        </div>
+        <progress class="progress"></progress>
+    </div>
+</template>
+<template id="comment-template">
+    <div class="media">
+        <div class="media-content">
+            <div class="content">
+            <p>
+                <strong></strong> <small></small>
+                <br>
+            </p>
+            </div>
+        </div>
+        <div class="media-right">
+            <form method="POST" action="/polls/{{poll._id}}/comments">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_id" value="">
+                <button aria-label="delete comment" class="delete" type="submit"></button>
+            </form>
+        </div>
+    </div>
+</template>
 <script>
-const showCommentError = errorManager('comment-error');
+const voteTemplate = document.getElementById('vote-template').content.firstElementChild;
+const commentTemplate = document.getElementById('comment-template').content.firstElementChild;
+const votesElement = document.getElementById('votes');
+const commentsElement = document.getElementById('comments');
 
-handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => {
+const reactedClass = "is-link";
+
+const showCommentError = errorManager('comment-error');
+handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comments', (formData) => {
     const comment = formData.get('comment');
 
     if (!comment || !comment.trim()) {
@@ -36,4 +109,116 @@ handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comment', (formData) => 
 
     return { comment: comment };
 });
+
+const counts = {};
+const buttons = [...document.querySelectorAll('#reactions > button')].reduce((all, button) => {
+    const reaction = button.getAttribute('data-reaction');
+    all[reaction] = button;
+    counts[reaction] = button.getElementsByClassName('count')[0];
+    return all;
+}, {});
+
+// Make sure latency doesn't break up the order of reactions made
+const handleReaction = (() => {
+    let queue = [];
+    let handling = false;
+    return async (newReaction) => {
+        queue.push(newReaction);
+        if (handling) return;
+
+        handling = true;
+        while (queue.length) {
+            const reaction = queue.shift();
+            // See if we're changing the reaction or deleting it
+            if (buttons[reaction].classList.contains(reactedClass)) { // Delete
+                const response = await fetch('/polls/{{poll._id}}/reaction', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'DELETE'
+                });
+
+                if (!response.ok || !(await response.json()).success) {
+                    queue = [];
+                    alert('Failed to delete your reaction.');
+                } else {
+                    buttons[reaction].classList.remove(reactedClass);
+                    counts[reaction].innerText = +counts[reaction].innerText - 1;
+                }
+            } else { // Update
+                const response = await fetch('/polls/{{poll._id}}/reaction', {
+                    body: JSON.stringify({ reaction: reaction }),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                });
+
+                if (!response.ok || !(await response.json()).success) {
+                    queue = [];
+                    alert('Failed to update your reaction.');
+                } else {
+                    const oldReactionButton = document.getElementsByClassName(reactedClass)[0];
+                    if (oldReactionButton) {
+                        const oldReaction = oldReactionButton.getAttribute('data-reaction');
+                        buttons[oldReaction].classList.remove(reactedClass);
+                        counts[oldReaction].innerText = +counts[oldReaction].innerText - 1;
+                    }
+                    buttons[reaction].classList.add(reactedClass);
+                    counts[reaction].innerText = +counts[reaction].innerText + 1;
+                }
+            }
+        }
+        handling = false;
+    };
+})();
+
+Object.keys(buttons).forEach((reaction) => {
+    buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));
+});
+
+const renderVotes = (votes) => {
+    votes.forEach((v, i) => {
+        const temp = voteTemplate.cloneNode(true);
+        const progress = temp.querySelector('progress');
+        progress.value = v.ratio;
+        progress.classList.add(`is-${i === {{vote}} ? 'link' : 'info'}`);
+        progress.id = `choice${i}`;
+        const label = temp.querySelector('label');
+        label.innerText = v.choice;
+        label.for = `choice${i}`;
+        temp.querySelector('p').innerText = `${v.votes} (${Math.floor(v.ratio * 100)}%)`;
+        votesElement.append(temp);
+    });
+};
+
+const ws = new WebSocket('ws://' + location.host + location.pathname);
+ws.addEventListener('message', event => {
+    const {type, data} = JSON.parse(event.data);
+    if (type === 'newComment') {
+        const temp = commentTemplate.cloneNode(true);
+        temp.setAttribute('data-id', data._id);
+        temp.querySelector('strong').innerText = data.display_name;
+        temp.querySelector('small').innerText = commentDate(data.date);
+        temp.querySelector('p').append(document.createTextNode(data.comment));
+        if (data.user !== '{{userId}}')
+            temp.querySelector('.media-right').remove();
+        else
+            temp.querySelector('input[name="_id"]').value = data._id;
+        commentsElement.firstElementChild.after(temp);
+    } else if (type === 'deleteComment') {
+        document.querySelector(`[data-id="${data}"]`).remove();
+    } else if (type === 'votes') {
+        votesElement.innerHTML = '';
+        renderVotes(data);
+    } else if (type === 'reactions') {
+        data.forEach(r => counts[r.reaction].innerText = r.count);
+    } else if (type === 'deleteReaction') {
+        counts[data].innerText = +counts[data].innerText - 1;
+    }
+});
+
+renderVotes({{{json poll.votes}}});
 </script>
