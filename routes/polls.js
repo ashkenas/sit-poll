@@ -19,6 +19,17 @@ router
         notImplemented(res);
     }));
 
+    router
+        .route('/create')
+        .get(sync(async (req, res) => { // View polls
+            // Update this with an actual page
+            //lock page so can only access if is_manager or is_admin is true
+            res.render('polls/pollCreate')
+        }))
+        .post(sync(async (req, res) => { // Create poll
+            notImplemented(res);
+    }));
+
 router
     .use('/:id', requirePoll('id')) // Automatically 404s for all methods if necessary
     .route('/:id')

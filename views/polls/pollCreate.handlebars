@@ -1,0 +1,44 @@
+<div class="section">
+    <P>THis is the poll create page</P>
+
+    <form id = "poll-create-form" method="post">
+        <label for="pollTitle">Poll Title:</label>
+        <input type="text" id="pollTitle" name="pollTitle" placeholder="Title"><br><br>
+        
+    </form>
+    <button onclick="createOption()">Add Option</button>
+    <button onclick="removeOption()">Remove Option</button>
+
+        <script>
+            
+            var form = document.getElementById("poll-create-form");
+            var optionCounter = 0;
+             
+            function createOption(){
+                var name = "option" + optionCounter;
+                var option = document.createElement("input");
+                option.setAttribute("type","text");
+                option.setAttribute("id",name);
+                option.setAttribute("name",name);
+                option.setAttribute("placeholder","Choice "+optionCounter);
+
+                var label = document.createElement("label");
+                label.setAttribute("for",name);
+                label.setAttribute("id","label"+optionCounter);
+                label.innerText="Choice "+optionCounter+":";
+
+                var br = document.createElement("br");
+                br.setAttribute("id", "br"+option);
+
+                form.appendChild(label);
+                form.appendChild(option);
+                form.appendChild(br);
+                optionCounter+=1;
+            }
+
+            function removeOption(){
+                
+            }
+
+        </script>
+</div>
