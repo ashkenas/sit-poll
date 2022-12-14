@@ -8,7 +8,7 @@ router
     .route('/')
     .get(sync(async (req, res) => { // Display login form
         // Placeholder, login with just a number
-        res.render('userLogin');
+        res.send(`<form method="POST"><label>Student #</label><input type="number" name="num"><input type="submit"></form>`);
     }))
     .post(sync(async (req, res) => { // Validate credentials, setup session
         // Placeholder, login with just a number
