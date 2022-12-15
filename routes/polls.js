@@ -24,7 +24,18 @@ router
         .get(sync(async (req, res) => { // View polls
             // Update this with an actual page
             //lock page so can only access if is_manager or is_admin is true
-            res.render('polls/pollCreate')
+            var user = await getUserById(req.session.userId);
+            console.log(user)
+            if (user.is_manager)
+            {
+                var rosters = [];
+                for (let roster of user.rosters){
+                    rosters.push(roster);
+                }
+                res.render('polls/pollCreate', {rosters: rosters})
+            } else {
+                throw statusError(403, 'Not authorized to create poll.')
+            }
         }))
         .post(sync(async (req, res) => { // Create poll
             notImplemented(res);
