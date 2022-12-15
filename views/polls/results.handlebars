@@ -41,7 +41,7 @@
                         </p>
                         </div>
                     </div>
-                    {{#if (equals this.user._id ../userId)}}
+                    {{#if (or ../session.manager (equals this.user._id ../userId))}}
                         <div class="media-right">
                             <form method="POST" action="/polls/{{../poll._id}}/comments">
                                 <input type="hidden" name="_method" value="DELETE">
@@ -95,6 +95,8 @@ const votesElement = document.getElementById('votes');
 const commentsElement = document.getElementById('comments');
 
 const reactedClass = "is-link";
+const vote = {{vote}};
+const manager = {{session.manager}};
 let oldReaction = '{{reaction}}';
 
 const showCommentError = errorManager('comment-error');
@@ -185,7 +187,7 @@ const renderVotes = (votes) => {
         const temp = voteTemplate.cloneNode(true);
         const progress = temp.querySelector('progress');
         progress.value = v.ratio;
-        progress.classList.add(`is-${i === {{vote}} ? 'link' : 'info'}`);
+        progress.classList.add(`is-${i === vote ? 'link' : 'info'}`);
         progress.id = `choice${i}`;
         const label = temp.querySelector('label');
         label.innerText = v.choice;
@@ -204,7 +206,7 @@ ws.addEventListener('message', event => {
         temp.querySelector('strong').innerText = data.display_name;
         temp.querySelector('small').innerText = commentDate(data.date);
         temp.querySelector('p').append(document.createTextNode(data.comment));
-        if (data.user !== '{{userId}}')
+        if (data.user !== '{{userId}}' && !manager)
             temp.querySelector('.media-right').remove();
         else
             temp.querySelector('input[name="_id"]').value = data._id;

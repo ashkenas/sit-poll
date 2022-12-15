@@ -10,7 +10,6 @@ const crypto = require('crypto');
 const configRoutes = require('./routes');
 const exphbs = require('express-handlebars');
 const session = require('express-session');
-const { listen } = require('express/lib/application');
 const { requirePoll } = require('./data').polls;
 
 const sessionMiddleware = session({
@@ -30,7 +29,7 @@ const errorMiddleware = (err, req, res, next) => {
     if (res.headersSent) return next(err);
     if (!err.status) console.error(err);
     const status = err.status || 500;
-    const message = err.status ? err.message : 'Interal server error.';
+    const message = err.status ? err.message : 'Internal server error.';
     if (req.method === 'GET') {
         res.status(status).render('error', {
             status: status,
@@ -72,6 +71,7 @@ app.engine('handlebars', exphbs.engine({
     defaultLayout: 'main',
     helpers: {
         equals: (a, b) => a === b,
+        or: (a, b) => a || b,
         date: (d) => {
             const today = (new Date()).toDateString();
             const comp = new Date(d);

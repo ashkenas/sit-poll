@@ -15,6 +15,11 @@
                     <a class="navbar-item" href="/">
                         Home
                     </a>
+                    {{#if (or session.manager session.admin)}}
+                        <a class="navbar-item" href="/polls/create">
+                            Create Poll
+                        </a>
+                    {{/if}}
                 </div>
             </div>
         </nav>

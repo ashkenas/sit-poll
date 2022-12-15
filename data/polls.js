@@ -36,7 +36,7 @@ const requirePoll = (id) => sync(async (req, res, next) => {
     const usersCol = await users();
     if (req.session.manager) { // Check if the user manages this poll
         const manager = await usersCol.findOne({
-            _id: req.session.userId,
+            _id: ObjectId(req.session.userId),
             rosters: { $elemMatch: { polls: req.params[id] } }
         });
         if (manager) return next();
