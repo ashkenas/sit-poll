@@ -3,9 +3,10 @@
 <form id="edit-roster-form" method="POST" action="/rosters/edit/add/{{rosterId}}">
   <input type="hidden" name="_method" value="PATCH">
 
-  <label id="category" for="category">Add students or assistants:</label>
+  {{!-- dropdown adapted from https://www.w3schools.com/tags/tag_select.asp --}}
+  <label id="categoryLabel" for="category">Add students or assistants:</label>
 
-  <select id="dropdown" name="category" id="cars">
+  <select id="dropdown" name="category" id="categoryInput">
     <option value="students">Students</option>
     <option value="assistants">Assistants</option>
   </select><br>

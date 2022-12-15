@@ -1,0 +1,27 @@
+<h1>Delete Roster '{{rosterLabel}}'?</h1>
+
+<table>
+  <tr>
+    <th>Students</th>
+    <th>Status</th>
+  </tr>
+  {{#each students}}
+    <tr>
+      <td>{{this}}</td>
+      <td></td>
+    </tr>
+  {{/each}}
+  {{#each assistants}}
+    <tr>
+      <td>{{this}}</td>
+      <td>TA</td>
+    </tr>
+  {{/each}}
+</table>
+
+<form id="delete-roster-form" method="POST" action="/rosters/delete/{{rosterId}}">
+  <input type="hidden" name="_method" value="DELETE">
+  <button id="deleteRotser" type="submit">Delete</button>
+</form>
+
+<a href="/rosters">Cancel</a>

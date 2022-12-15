@@ -136,9 +136,6 @@ router
 
       try {
         const updatedRoster = await addPersonToRoster(req.session.userId, req.params.rosterId, studentEmailInput, category);
-        if (updatedRoster.repeated.length !== 0) {
-          //alert(`Unable to add the following email(s) because they already exist in the roster:` + updatedRoster.repeated.join('\n'));
-        }
       } catch (e) {
         console.log(e);
         return res.status(e.status).render('error', {
@@ -152,5 +149,32 @@ router
       });
     }))
 
+router
+    .route('/delete/:rosterId')
+    .get(sync(async (req, res) => {
+      // todo: make sure this roster belongs to current user
+      // todo: ask user if this is really what they want to do
+      
+      req.params.rosterId = requireId(req.params.rosterId);
+      const roster = await getRosterById(req.params.rosterId);
+      return res.render('rosters/deleteRoster', {
+        rosterLabel: roster.label,
+        students: roster.students,
+        assistants: roster.assistants,
+        rosterId: req.params.rosterId
+      });
+
+    }))
+    .delete(sync(async (req, res) => { 
+      console.log('in delete');
+      // todo: delete current roster
+      req.params.rosterId = requireId(req.params.rosterId, 'roster id');
+      const roster = await deleteRoster(req.params.rosterId);
+
+      const user = await getUserById(req.session.userId);
+      return res.render('rosters/displayRosters', {
+        rosters: user.rosters
+      });
+    }))
 
 module.exports = router;

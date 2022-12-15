@@ -23,6 +23,7 @@ const verbMiddleware = (req, res, next) => {
     if (req.method === 'POST' && req.body._method)
         if (['PUT', 'DELETE', 'PATCH'].includes(req.body._method.toUpperCase()))
             req.method = req.body._method;
+    console.log(req.method);
     next();
 };
 

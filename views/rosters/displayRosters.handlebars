@@ -31,8 +31,8 @@
     {{!-- todo: change route to file that handles student stuff --}}  
     <a href="/rosters/edit/add/{{this._id}}">Add student(s)</a>
     
-    <a href="/rosters/delete">Delete roster</a>
-
+    <a href="/rosters/delete/{{this._id}}">Delete roster</a>
+    <br><br>
   {{/each}}
 {{else}}
   <p>No rosters exist yet</p>
