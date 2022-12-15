@@ -2,6 +2,12 @@
     <P>THis is the poll create page</P>
 
     <form id = "poll-create-form" method="post">
+        <span>Select a roster to assign the poll to:</span>
+        <select id="roster">
+            {{#each rosters}}
+                <option value="{{label}}">{{label}}</option>
+            {{/each}}
+        </select> <br><br>
         <label for="pollTitle">Poll Title:</label>
         <input type="text" id="pollTitle" name="pollTitle" placeholder="Title"><br><br>
         
