@@ -10,3 +10,45 @@ p.error {
     color: #485fc7;
     background-color: white;
 }
+
+/* adaptation from https://stackoverflow.com/questions/8357058/how-to-make-an-html-anchor-tag-or-link-look-like-a-button */
+.button {
+    display: block;
+    width: 155px;
+    height: 25px;
+    background: #4E9CAF;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+    color: white;
+    line-height: 25px;
+}
+
+/* adapted from https://www.w3schools.com/css/tryit.asp?filename=trycss_table_fancy */
+table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%
+}
+
+td, th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+tr:nth-child(even){background-color: #f2f2f2;}
+
+tr:hover {background-color: #ddd;}
+
+table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: center !important;
+    color: white !important;
+    background-color: maroon;
+}
+
+caption {
+    font-weight: bolder;
+    font-size: larger;
+}

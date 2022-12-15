@@ -44,34 +44,31 @@ const createRoster = async (userId, label, students, assistants) => {
   // todo: check for duplicate emails
 
   const usersCol = await users();
-  /* const failedToAdd = [];
-  const add = [];
-  //todo: check for emails that have accounts in students array
+  const failedToAdd = [];
+  const studentsToAdd = [];
+  //todo: check for duplicate emails in students array
   students.forEach(async(studentEmail) => {
-    try {
-      studentEmail = requireEmail(studentEmail);
-      const student = await usersCol.findOne({email: studentEmail});
-      if(!student) failedToAdd.push(studentEmail);
-      else add.push(studentEmail);
-    } catch(e) {
-      failedToAdd.push(studentEmail);
-    }
-    
+    studentEmail = requireEmail(studentEmail);
+    //const student = await usersCol.findOne({email: studentEmail});
+    if(studentsToAdd.includes(studentEmail)) failedToAdd.push(studentEmail);
+    else studentsToAdd.push(studentEmail);
   });
+
+  const assistantsToAdd = [];
   //todo: check for valid assistants array
   assistants.forEach(async(assistantEmail) => {
-    const assistant = await usersCol.findOne({email: assistantEmail});
-    if(!assistant) failedToAdd.push(assistantEmail);
-    else add.push(assistantEmail);
-  }); */
+    //const assistant = await usersCol.findOne({email: assistantEmail});
+    if(assistantsToAdd.includes(assistantEmail) || studentsToAdd.includes(assistantEmail)) failedToAdd.push(assistantEmail);
+    else assistantsToAdd.push(assistantEmail);
+  });
   
   const user = await usersCol.findOne({_id: userId});
 
   const newRoster = {
     _id: ObjectId(),
     label: label,
-    students: students,
-    assistants: assistants,
+    students: studentsToAdd,
+    assistants: assistantsToAdd,
     polls: []
   }
 
@@ -82,6 +79,10 @@ const createRoster = async (userId, label, students, assistants) => {
 
   if (updatedInfo.modifiedCount === 0) {
     throw statusError(500, `Error: could not update user with roster successfully`);
+  }
+
+  if(failedToAdd.length > 0) {
+    throw statusError(404, `Could not add duplicate emails to roster: ` + failedToAdd.toString());
   }
 
   return user;
@@ -138,33 +139,7 @@ const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
 
   emailArray.forEach(async (email) => {
     
-    //todo: if email already exists in roster, do not allow user to add again (or simply do not re-add)
-
-    // returns the user with the given email
-    /*const userWithEmail = await usersCol.findOne(
-      {email: email}
-    );
-
-     let student = {};
-    if(userWithEmail === null) {
-      student = {
-        _id: -1,
-        display_name: -1,
-        email: email
-      }
-    } else {
-      student = {
-        _id: userWithEmail._id,
-        display_name: userWithEmail.display_name,
-        email: userWithEmail.email
-      }
-    } */
-
-    /* const updatedInfo = await usersCol.updateOne(
-      {_id: userWithRoster._id},
-      {$addToSet: {['rosters.' + category]: email}}
-    ); */
-
+    // todo: if email already exists in roster, do not allow user to add again (or simply do not re-add)
     // todo: should it simply be skipped? -- need to remove student and add back if changing between student/assistant
     if ((roster.students).includes(email) || (roster.assistants).includes(email)) {
       //throw statusError(400, `${email || "email"} already exists in roster. Any emails before this email have been added.`);
