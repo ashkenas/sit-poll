@@ -6,7 +6,7 @@ p.error {
     display: none;
 }
 
-#reactions > button.is-info:focus:not(:hover) {
-    color: #3e8ed0;
+#reactions > button.is-link:focus:not(:hover) {
+    color: #485fc7;
     background-color: white;
 }

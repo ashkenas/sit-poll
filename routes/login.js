@@ -8,12 +8,14 @@ router
     .route('/')
     .get(sync(async (req, res) => { // Display login form
         // Placeholder, login with just a number
-        res.send(`<form method="POST"><label>Student #</label><input type="number" name="num"><input type="submit"></form>`);
+        res.send(`<form method="POST"><label>Email</label><input type="string" name="email"><input type="submit"></form>`);
     }))
     .post(sync(async (req, res) => { // Validate credentials, setup session
         // Placeholder, login with just a number
-        const user = await getUserByEmail(`student${req.body.num}@stevens.edu`);
+        const user = await getUserByEmail(`${req.body.email}@stevens.edu`);
         req.session.userId = user._id;
+        req.session.manager = user.is_manager;
+        req.session.admin = user.is_admin;
         // Redirect to original destination
         res.redirect(req.session.redirect || '/');
     }));
