@@ -143,4 +143,24 @@ wsServer.on('connection', (ws, req) => {
         clients.set(id, [ws]);
     else
         clients.get(id).push(ws);
+
+    ws.on('pong', () => ws.isAlive = true);
+    
+    ws.on('close', () => // Remove closed connections.
+        clients.set(id, clients.get(id).filter(e => e !== ws))
+    );
 });
+
+// Check for broken connections that didn't send a close event
+// Sourced with little modification from the websocket documentation
+// Src: https://github.com/websockets/ws#how-to-detect-and-close-broken-connections
+const cleanupInterval = setInterval(() => {
+    wsServer.clients.forEach((ws) => {
+        if (ws.isAlive === false) return ws.terminate();
+
+        ws.isAlive = false;
+        ws.ping();
+    })
+}, 30000);
+
+wsServer.on('clone', () => clearInterval(cleanupInterval));

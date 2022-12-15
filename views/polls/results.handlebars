@@ -95,6 +95,7 @@ const votesElement = document.getElementById('votes');
 const commentsElement = document.getElementById('comments');
 
 const reactedClass = "is-link";
+let oldReaction = '{{reaction}}';
 
 const showCommentError = errorManager('comment-error');
 handleForm('comment-form', 'POST', '/polls/{{poll._id}}/comments', (formData) => {
@@ -130,7 +131,7 @@ const handleReaction = (() => {
         while (queue.length) {
             const reaction = queue.shift();
             // See if we're changing the reaction or deleting it
-            if (buttons[reaction].classList.contains(reactedClass)) { // Delete
+            if (reaction === oldReaction) { // Delete
                 const response = await fetch('/polls/{{poll._id}}/reaction', {
                     headers: {
                         'Accept': 'application/json',
@@ -145,6 +146,7 @@ const handleReaction = (() => {
                 } else {
                     buttons[reaction].classList.remove(reactedClass);
                     counts[reaction].innerText = +counts[reaction].innerText - 1;
+                    oldReaction = null;
                 }
             } else { // Update
                 const response = await fetch('/polls/{{poll._id}}/reaction', {
@@ -160,14 +162,13 @@ const handleReaction = (() => {
                     queue = [];
                     alert('Failed to update your reaction.');
                 } else {
-                    const oldReactionButton = document.getElementsByClassName(reactedClass)[0];
-                    if (oldReactionButton) {
-                        const oldReaction = oldReactionButton.getAttribute('data-reaction');
+                    if (oldReaction) {
                         buttons[oldReaction].classList.remove(reactedClass);
                         counts[oldReaction].innerText = +counts[oldReaction].innerText - 1;
                     }
                     buttons[reaction].classList.add(reactedClass);
                     counts[reaction].innerText = +counts[reaction].innerText + 1;
+                    oldReaction = reaction;
                 }
             }
         }

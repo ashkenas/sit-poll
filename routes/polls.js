@@ -101,7 +101,7 @@ router
 router
     .route('/:id/reaction')
     .post(validate(['reaction']), sync(async (req, res) => { // Leave reaction on poll
-        if (!validReactions.includes(req.body.reaction))
+        if (!Object.keys(validReactions).includes(req.body.reaction))
             throw statusError(400, 'Invalid reaction.');
         await reactOnPoll(req.params.id, req.session.userId, req.body.reaction)
         res.updateClients(req.params.id.toString(), 'reactions',
