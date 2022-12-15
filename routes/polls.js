@@ -21,23 +21,29 @@ router
 
     router
         .route('/create')
-        .get(sync(async (req, res) => { // View polls
+        .get(sync(async (req, res) => { // load pollCreate page with rosters if user has authorization to create polls
             // Update this with an actual page
-            //lock page so can only access if is_manager or is_admin is true
             var user = await getUserById(req.session.userId);
-            console.log(user)
             if (user.is_manager)
             {
                 var rosters = [];
                 for (let roster of user.rosters){
                     rosters.push(roster);
                 }
-                res.render('polls/pollCreate', {rosters: rosters})
+                
+                //this handles taking current date and changing it to format to fit datetime-local min in pollCreate
+                // work this out later
+
+                res.render('polls/pollCreate', {
+                    rosters: rosters});
             } else {
                 throw statusError(403, 'Not authorized to create poll.')
             }
         }))
         .post(sync(async (req, res) => { // Create poll
+            //console.log(req.body.availDate)
+            let date = new Date(req.body.availDate);
+            console.log(date);
             notImplemented(res);
     }));
 

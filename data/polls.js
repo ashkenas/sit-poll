@@ -1,8 +1,26 @@
 const { ObjectId } = require("mongodb");
 const { polls, users } = require("../config/mongoCollections");
 const { stringifyId, statusError, sync } = require("../helpers");
-const { requireId, requireInteger, requireString, validReactions } = require("../validation");
+const { requireId, requireInteger, requireOptions, requireDate, requireBoolean, requireString, validReactions } = require("../validation");
 const { getUserById } = require("./users");
+
+
+
+const createPoll = async (title, choices, authorID, public_bool, close_date, roster) =>{
+    requireString(title, 'title');
+    requireOptions(choices, 'choices');
+    requireId(authorID, 'authorID');
+    requireBoolean(public_bool, 'public_bool');
+    requireDate(close_date, 'poll close date');
+    requireString(roster, 'roster');
+
+    
+}
+
+
+
+
+
 
 /**
  * Checks if a poll exists
