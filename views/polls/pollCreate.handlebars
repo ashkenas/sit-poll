@@ -28,7 +28,7 @@
                 label.innerText="Choice "+optionCounter+":";
 
                 var br = document.createElement("br");
-                br.setAttribute("id", "br"+option);
+                br.setAttribute("id", "br"+optionCounter);
 
                 form.appendChild(label);
                 form.appendChild(option);
@@ -37,7 +37,14 @@
             }
 
             function removeOption(){
-                
+                optionCounter-=1;
+                var label = document.getElementById("label"+optionCounter);
+                var br = document.getElementById("br"+optionCounter);
+                var option = document.getElementById("option"+optionCounter);
+
+                label.remove();
+                br.remove();
+                option.remove();
             }
 
         </script>
