@@ -1,5 +1,5 @@
 const express = require('express');
-const { validate, requireOptions, requireString, requireId } = require('../validation');
+const { validate, requireOptions, requireString, requireId, requireEmails } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
@@ -8,7 +8,8 @@ const { title } = require('process');
 const { create } = require('express-handlebars');
 //const { getRosterById } = require('../data/rosters');
 const { getUserById } = data.users;
-const { getRostersByUserId, getRosterById, createRoster, deleteRoster, addPersonToRoster, removePersonFromRoster, updateRosterLabel } = data.rosters;
+const { getRostersByUserId, getRosterById, createRoster, deleteRoster, 
+  addPersonToRoster, removePersonFromRoster, updateRosterLabel } = data.rosters;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -73,25 +74,16 @@ router
 
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
-      return res.render('rosters/editRoster', {
+      return res.render('rosters/editRosterTitle', {
         rosterLabel: roster.label,
         rosterId: req.params.rosterId
       });
-      //const roster = await getRosterById(req.params.rosterId);
-     
       
-      // check to make sure roster is owned by user logged in
-      /* if((req.session.manager && user.is_manager) || (req.session.admin && user.is_admin)) {
-        res.render('rosters/editRoster');
-      } else {
-        res.render('error', {
-          status: 403,
-          message: "Unauthorized to access this page"
-        });
-      } */
+      // todo: check to make sure roster is owned by user logged in
+
     }))
     .patch(sync(async (req, res) => { 
-      // todo: update stuff
+      
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
       
@@ -101,6 +93,54 @@ router
       try {
         const updatedRoster = await updateRosterLabel(req.session.userId, req.params.rosterId, titleInput);
       } catch (e) {
+        return res.status(e.status).render('error', {
+          status: e.status,
+          message: e.message
+        })
+      }
+      const user = await getUserById(req.session.userId);
+      return res.render('rosters/displayRosters', {
+        rosters: user.rosters
+      });
+    }))
+
+
+router
+    .route('/edit/add/:rosterId')
+    .get(sync(async (req, res) => { // Render form to create a roster
+      // todo: render edit page
+      
+      //const user = await getUserById(req.session.userId);
+      // todo: check the rosterid is valid
+
+      req.params.rosterId = requireId(req.params.rosterId);
+      const roster = await getRosterById(req.params.rosterId);
+      return res.render('rosters/addStudents', {
+        rosterLabel: roster.label,
+        rosterId: req.params.rosterId
+      });
+      
+      // todo: check to make sure roster is owned by user logged in
+
+    }))
+    .patch(sync(async (req, res) => { 
+      
+      req.params.rosterId = requireId(req.params.rosterId, 'roster id');
+      const roster = await getRosterById(req.params.rosterId);
+      
+      let {studentEmailInput, category} = req.body;
+      //todo: xss
+      studentEmailInput = requireString(studentEmailInput, 'Email(s)');
+      studentEmailInput = requireEmails(studentEmailInput.split(','), 'Email(s)');
+      category = requireString(category, 'category');
+
+      try {
+        const updatedRoster = await addPersonToRoster(req.session.userId, req.params.rosterId, studentEmailInput, category);
+        if (updatedRoster.repeated.length !== 0) {
+          //alert(`Unable to add the following email(s) because they already exist in the roster:` + updatedRoster.repeated.join('\n'));
+        }
+      } catch (e) {
+        console.log(e);
         return res.status(e.status).render('error', {
           status: e.status,
           message: e.message

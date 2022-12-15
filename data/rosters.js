@@ -1,7 +1,8 @@
+const e = require("express");
 const { ObjectId } = require("mongodb");
 const { users } = require("../config/mongoCollections");
 const { stringifyId, statusError } = require("../helpers");
-const { requireString, requireId, requireEmail, requireOptions } = require("../validation");
+const { requireString, requireId, requireEmails, requireOptions } = require("../validation");
 
 // return rosters array that is associated with a given user
 const getRostersByUserId = async (userId) => {
@@ -107,38 +108,83 @@ const deleteRoster = async (rosterId) => {
 };
 
 //todo: update to make roster how we want it; would then have to also update removePersonFromRoster
-const addPersonToRoster = async (rosterId, email, category) => {
+const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
+  userId = requireId(userId, 'user id');
   rosterId = requireId(rosterId, 'roster id');
-  email = requireEmail(email, 'email').trim().toLowerCase();
-  category = requireString(category, 'category').trim();
+  emailArray = requireEmails(emailArray, 'email');
+  category = requireString(category, 'category').trim().toLowerCase();
+
+  if (category !== 'students' && category !== 'assistants')
+  // todo: double check what error should be thrown here
+    throw statusError(400, `${category || "category"} is undefined`);
 
   const usersCol = await users();
-
+  console.log('adding people');
   // returns the user which contains the given roster
   const userWithRoster = await usersCol.findOne(
     {"rosters._id": rosterId}
   );
+
+  if(!userWithRoster._id.equals(userId)) {
+    throw statusError(401, `Roster cannot be edited by current user`);
+  }
+
+  const roster = await getRosterById(rosterId);
+  console.log(roster.students);
+  let unadded = [];
+
+  emailArray.forEach(async (email) => {
+    
+    //todo: if email already exists in roster, do not allow user to add again (or simply do not re-add)
+
+    // returns the user with the given email
+    /*const userWithEmail = await usersCol.findOne(
+      {email: email}
+    );
+
+     let student = {};
+    if(userWithEmail === null) {
+      student = {
+        _id: -1,
+        display_name: -1,
+        email: email
+      }
+    } else {
+      student = {
+        _id: userWithEmail._id,
+        display_name: userWithEmail.display_name,
+        email: userWithEmail.email
+      }
+    } */
+
+    /* const updatedInfo = await usersCol.updateOne(
+      {_id: userWithRoster._id},
+      {$addToSet: {['rosters.' + category]: email}}
+    ); */
+
+    // todo: should it simply be skipped? -- need to remove student and add back if changing between student/assistant
+    if ((roster.students).includes(email) || (roster.assistants).includes(email)) {
+      //throw statusError(400, `${email || "email"} already exists in roster. Any emails before this email have been added.`);
+      unadded.push(email);
+      return;
+    }
+
+    const updatedInfo = await usersCol.updateOne(
+      //{_id: userWithRoster._id},
+      {_id: userId, 'rosters._id': rosterId},
+      {$addToSet: {["rosters.$." + category]: email}}
+    );
+
+    if (updatedInfo.modifiedCount === 0) {
+      throw statusError(500, `Error: could not add ${email || "student"} to roster successfully. Any emails before this email have been added.`);
+    }
+  });
+
+  if (unadded.length > 0) {
+    // todo: check error status, figure out new line for each email; maybe just alert user rather than error?
+    throw statusError(400, `Unable to add the following email(s) because they already exist in the roster:\n` + unadded.join('\r\n'));
+  }
   
-  // returns the user with the given email
-  const userWithEmail = await usersCol.findOne(
-    {email: email}
-  );
-
-  const student = {
-    _id: userWithEmail._id,
-    display_name: userWithEmail.display_name,
-    email: userWithEmail.email
-  }
-
-  const updatedInfo = await usersCol.updateOne(
-    {_id: userWithRoster._id},
-    {$addToSet: {['rosters.' + category]: student}}
-  );
-
-  if (updatedInfo.modifiedCount === 0) {
-    throw statusError(500, `Error: could not add ${studentId || "student"} to roster successfully`);
-  }
-
   return {addedToRoster: 'true'};
 };
 
@@ -179,26 +225,17 @@ const updateRosterLabel = async (userId, rosterId, label) => {
     {"rosters._id": rosterId}
   );
 
-  const rosterFound = await usersCol.findOne(
-    {
-      "rosters._id": userWithRoster._id
-    }
-  )
-
-
-
   if(!userWithRoster._id.equals(userId)) {
     throw statusError(401, `Roster cannot be edited by current user`);
   }
-  console.log('ids equal')
+
   const updatedInfo = await usersCol.updateOne(
     //{_id: userWithRoster._id},
     {_id: userId, 'rosters._id': rosterId},
     {$set: {"rosters.$.label": label}}
   );
-  console.log('updated something');
+
   if (updatedInfo.modifiedCount === 0) {
-    console.log('tough');
     throw statusError(500, 'Error: could not change roster label successfully');
   }
   
