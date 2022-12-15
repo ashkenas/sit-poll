@@ -1,31 +1,39 @@
 <div class="section">
-    <P>THis is the poll create page</P>
+    <P>This is the poll create page</P>
 
-    <form id = "poll-create-form" method="post">
+    <form id = "pollCreateForm" method="post">
         <span>Select a roster to assign the poll to:</span>
         <select id="roster">
             {{#each rosters}}
                 <option value="{{label}}">{{label}}</option>
             {{/each}}
-        </select> <br><br>
+        </select> <br>
+        <label for="avail-date">Poll available until:</label>
+        <input type="datetime-local" id="availDate" name="availDate"> <br><br> <!--value="{{dateTimeLocalValue}}" min="{{dateTimeLocalValue}}"-->
+
         <label for="pollTitle">Poll Title:</label>
         <input type="text" id="pollTitle" name="pollTitle" placeholder="Title"><br><br>
+        <label for="option1">Choice 1</label> 
+        <input type="text" id="option1" name="option" placeholder="Choice 1"><br>
+        <label for="option2">Choice 2</label>
+        <input type="text" id="option2" name="option" placeholder="Choice 2"><br>
         
     </form>
     <button onclick="createOption()">Add Option</button>
-    <button onclick="removeOption()">Remove Option</button>
+    <button onclick="removeOption()">Remove Option</button><br>
+    <button type="submit" form="pollCreateForm">Submit</button>
 
         <script>
             
             var form = document.getElementById("poll-create-form");
-            var optionCounter = 0;
+            var optionCounter = 3;
              
             function createOption(){
                 var name = "option" + optionCounter;
                 var option = document.createElement("input");
                 option.setAttribute("type","text");
                 option.setAttribute("id",name);
-                option.setAttribute("name",name);
+                option.setAttribute("name","option");
                 option.setAttribute("placeholder","Choice "+optionCounter);
 
                 var label = document.createElement("label");
@@ -43,14 +51,18 @@
             }
 
             function removeOption(){
-                optionCounter-=1;
-                var label = document.getElementById("label"+optionCounter);
-                var br = document.getElementById("br"+optionCounter);
-                var option = document.getElementById("option"+optionCounter);
+                if(optionCounter>3){
+                    optionCounter-=1;
+                    var label = document.getElementById("label"+optionCounter);
+                    var br = document.getElementById("br"+optionCounter);
+                    var option = document.getElementById("option"+optionCounter);
 
-                label.remove();
-                br.remove();
-                option.remove();
+                    label.remove();
+                    br.remove();
+                    option.remove();
+                }else {
+                    //do nothing
+                }
             }
 
         </script>
