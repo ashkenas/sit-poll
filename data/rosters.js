@@ -1,6 +1,6 @@
 const { ObjectId } = require("mongodb");
 const { users } = require("../config/mongoCollections");
-const { stringifyId } = require("../helpers");
+const { stringifyId, statusError } = require("../helpers");
 const { requireString, requireId, requireEmail, requireOptions } = require("../validation");
 
 // return rosters array that is associated with a given user
@@ -9,6 +9,23 @@ const getRostersByUserId = async (userId) => {
   const usersCol = await users();
   const user = await usersCol.findOne({ _id: userId });
   return user.rosters/* (user.is_manager || user.is_admin) ? user.rosters : null */;
+};
+
+// return roster associated with a given roster id
+const getRosterById = async (rosterId) => {
+  rosterId = requireId(rosterId, 'roster id');
+  const usersCol = await users();
+  const user = await usersCol.findOne(
+    {'rosters._id': rosterId},
+    {projection: {"rosters.$": true}}
+  );
+
+  if(user) {
+    return user.rosters[0];
+  } else {
+    throw statusError(404, `Roster with ID ${rosterId} not found`);
+  }
+  
 };
 
 // return user info for which new object is created
@@ -46,9 +63,6 @@ const createRoster = async (userId, label, students, assistants) => {
   
   const user = await usersCol.findOne({_id: userId});
 
-  console.log('lshdlfhkjs');
-  console.log(students);
-
   const newRoster = {
     _id: ObjectId(),
     label: label,
@@ -63,7 +77,7 @@ const createRoster = async (userId, label, students, assistants) => {
   );
 
   if (updatedInfo.modifiedCount === 0) {
-    throw 'Error: could not update user with roster';
+    throw statusError(500, `Error: could not update user with roster successfully`);
   }
 
   return user;
@@ -86,7 +100,7 @@ const deleteRoster = async (rosterId) => {
   );
 
   if (updatedInfo.modifiedCount === 0) {
-    throw 'Error: could not remove roster successfully';
+    throw statusError(500, `Error: could not remove roster successfully`);
   }
 
   return {deleted: 'true'};
@@ -122,7 +136,7 @@ const addPersonToRoster = async (rosterId, email, category) => {
   );
 
   if (updatedInfo.modifiedCount === 0) {
-    throw 'Error: could not remove roster successfully';
+    throw statusError(500, `Error: could not add ${studentId || "student"} to roster successfully`);
   }
 
   return {addedToRoster: 'true'};
@@ -147,16 +161,65 @@ const removePersonFromRoster = async (rosterId, userId, category) => {
   );
 
   if (updatedInfo.modifiedCount === 0) {
-    throw 'Error: could not remove roster successfully';
+    throw statusError(500, `Error: could not remove ${studentId || "student"} from roster successfully`);
   }
 
   return {addedToRoster: 'true'};
 };
 
+// return roster that has been updated with label
+const updateRosterLabel = async (userId, rosterId, label) => {
+  userId = requireId(userId, 'user id');
+  rosterId = requireId(rosterId, 'roster id');
+  label = requireString(label, 'roster label');
+  const usersCol = await users();
+  
+  // returns the user which contains the given roster
+  const userWithRoster = await usersCol.findOne(
+    {"rosters._id": rosterId}
+  );
+
+  const rosterFound = await usersCol.findOne(
+    {
+      "rosters._id": userWithRoster._id
+    }
+  )
+
+
+
+  if(!userWithRoster._id.equals(userId)) {
+    throw statusError(401, `Roster cannot be edited by current user`);
+  }
+  console.log('ids equal')
+  const updatedInfo = await usersCol.updateOne(
+    //{_id: userWithRoster._id},
+    {_id: userId, 'rosters._id': rosterId},
+    {$set: {"rosters.$.label": label}}
+  );
+  console.log('updated something');
+  if (updatedInfo.modifiedCount === 0) {
+    console.log('tough');
+    throw statusError(500, 'Error: could not change roster label successfully');
+  }
+  
+  const user = await usersCol.findOne(
+    {'rosters._id': rosterId},
+    {projection: {"rosters.$": true}}
+  );
+
+  if(user) {
+    return user.rosters[0];
+  } else {
+    throw statusError(404, `Roster with ID ${rosterId} not found`);
+  }
+}
+
 module.exports = {
     getRostersByUserId,
+    getRosterById,
     createRoster,
     deleteRoster,
     addPersonToRoster,
-    removePersonFromRoster
+    removePersonFromRoster,
+    updateRosterLabel
 };
