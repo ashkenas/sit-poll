@@ -9,6 +9,9 @@ const { addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, 
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
+// Automatically 404/3s for all poll-specific routes if necessary
+router.use('/:id', requirePoll('id'))
+
 router
     .route('/')
     .get(sync(async (req, res) => { // View polls
@@ -20,11 +23,10 @@ router
     }));
 
 router
-    .use('/:id', requirePoll('id')) // Automatically 404s for all methods if necessary
     .route('/:id')
     .get(sync(async (req, res) => { // Get voting page for poll
         const poll = await getPollInfoById(req.params.id);
-        if (poll.close_date < Date.now())
+        if (poll.close_date < Date.now() || req.session.manager || req.session.admin)
             return res.redirect(`/polls/${req.params.id.toString()}/results`);
         res.render('polls/vote', {
             poll: poll,
@@ -33,6 +35,8 @@ router
         });
     }))
     .post(validate(['vote']), sync(async (req, res) => { // Vote on poll
+        if (req.session.manager || req.session.admin)
+            throw statusError(403, 'Only students can vote on polls.');
         const poll = await getPollInfoById(req.params.id);
         const vote = req.body.vote;
         if (vote < 0 || vote >= poll.choices.length)
@@ -60,7 +64,6 @@ router
     }));
 
 router
-    .use('/:id/results', requirePoll('id')) // Automatically 404s for all methods if necessary
     .route('/:id/results')
     .get(sync(async (req, res) => { // Results page for poll
         const vote = await getVote(req.params.id, req.session.userId);
@@ -70,7 +73,7 @@ router
         if (req.accepts('html')) {
             res.render('polls/results', {
                 poll: poll,
-                vote: vote,
+                vote: vote === null ? -1 : vote,
                 userId: req.session.userId,
                 reaction: await getReaction(req.params.id, req.session.userId),
                 author: (await getUserById(poll.author)).display_name,
@@ -90,7 +93,7 @@ router
     .delete(validate(['_id']), sync(async (req, res) => { // Delete comment on poll
         const comment = await getComment(req.body._id);
         if (!comment) throw statusError(400, 'Comment does not exist, cannot delete.');
-        if (!comment.user.equals(req.session.userId))
+        if (!(comment.user.equals(req.session.userId) || req.session.manager || req.session.admin))
             throw statusError(403, 'Cannot delete comment left by another user.');
 
         await deleteComment(req.body._id);
@@ -101,7 +104,7 @@ router
 router
     .route('/:id/reaction')
     .post(validate(['reaction']), sync(async (req, res) => { // Leave reaction on poll
-        if (!validReactions.includes(req.body.reaction))
+        if (!Object.keys(validReactions).includes(req.body.reaction))
             throw statusError(400, 'Invalid reaction.');
         await reactOnPoll(req.params.id, req.session.userId, req.body.reaction)
         res.updateClients(req.params.id.toString(), 'reactions',

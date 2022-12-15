@@ -10,7 +10,7 @@ const notFound = (name) => (req, res) => {
 };
 
 const authMiddleware = (req, res, next) => { // Redirect if not logged in
-    if (req.path.startsWith('/login')) {
+    if (req.path.startsWith('/login') || req.path.startsWith('/register')) {
         if (req.session.userId) res.redirect('/');
         else next();
     } else if (!req.session.userId) {
@@ -20,7 +20,13 @@ const authMiddleware = (req, res, next) => { // Redirect if not logged in
         } else {
             res.status(403).json({ error: 'Not logged in.' });
         }
-    } else next();
+    } else {
+        res.locals.session = {
+            userId: req.session.userId,
+            manager: req.session.manager || req.session.admin || false
+        };
+        next();
+    }
 };
 
 const constructorMethod = (app) => {
@@ -31,6 +37,7 @@ const constructorMethod = (app) => {
     app.get('/favicon.ico', (req, res) => res.redirect('/public/favicon.ico'));
 
     app.use(authMiddleware); // Authenticate all routes below this
+    app.get('/', (req, res) => res.redirect('/polls'));
     app.use('/login', loginRoutes);
     app.use('/polls', pollRoutes);
 
