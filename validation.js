@@ -86,6 +86,19 @@ const requireEmails = (emails, name) => {
     });
 }
 
+// given array of one email, return valid email
+const requireEmail = (email, name) => {
+    exists(email, name);
+    email = requireString(email, name);
+    if(email.trim().toLowerCase().endsWith('@stevens.edu')) {
+        const handle = email.substring(0, email.length - '@stevens.edu'.length + 1);
+        if(!/[a-zA-Z0-9.]/.test(handle)) {
+            throw statusError(400, `${email} is not a valid email`);
+        }
+    }
+    return email.trim().toLowerCase();
+}
+
 const dataTypes = {
     _id: requireId,
     email: requireString,
@@ -160,6 +173,7 @@ const validReactions = {
 module.exports = {
     requireBoolean,
     requireDate,
+    requireEmail,
     requireEmails,
     requireId,
     requireInteger,

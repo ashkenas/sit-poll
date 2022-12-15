@@ -1,5 +1,5 @@
 const express = require('express');
-const { validate, requireOptions, requireString, requireId, requireEmails } = require('../validation');
+const { validate, requireOptions, requireString, requireId, requireEmail, requireEmails } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
@@ -53,12 +53,12 @@ router
         //todo: xss
         titleInput = requireString(titleInput, 'Title');
         studentEmailInput = studentEmailInput.split(',');
-        studentEmailInput = requireOptions(studentEmailInput, 'Student Emails');
+        studentEmailInput = requireEmails(studentEmailInput, 'Student Emails');
         if(!assistantEmailInput.trim()) {
           assistantEmailInput = [];
         } else {
           assistantEmailInput = assistantEmailInput.split(',');
-          assistantEmailInput = requireOptions(assistantEmailInput, 'Assistant Emails');
+          assistantEmailInput = requireEmails(assistantEmailInput, 'Assistant Emails');
         }
         const updatedUser = await createRoster(req.session.userId, titleInput, studentEmailInput, assistantEmailInput);
         return res.redirect('/rosters');
@@ -150,11 +150,58 @@ router
     }))
 
 router
+    .route('/edit/:rosterId/remove/:studentEmail')
+    .get(sync(async (req, res) => { // Render form to create a roster
+      // todo: ask user if this is what they want to do
+      
+      //const user = await getUserById(req.session.userId);
+      // todo: check the rosterid is valid
+      // todo: check to make sure roster is owned by user logged in
+      req.params.studentEmail = requireEmail(req.params.studentEmail, 'student email');
+      req.params.rosterId = requireId(req.params.rosterId, 'roster id');
+      const roster = await getRosterById(req.params.rosterId);
+      return res.render('rosters/deleteStudent', {
+        rosterLabel: roster.label,
+        rosterId: req.params.rosterId,
+        studentEmail: req.params.studentEmail
+      });
+
+    }))
+    .patch(sync(async (req, res) => { 
+      // todo: delete student
+      
+      req.params.rosterId = requireId(req.params.rosterId, 'roster id');
+      const roster = await getRosterById(req.params.rosterId);
+      req.params.studentEmail = requireEmail(req.params.studentEmail, 'student email');
+      let category = '';
+      if(roster.assistants.includes(req.params.studentEmail)) {
+        category = 'assistants';
+      } else {
+        category = 'students';
+      }
+
+      try {
+        console.log('delete student');
+        const updatedRoster = await removePersonFromRoster(req.session.userId, req.params.rosterId, req.params.studentEmail, category);
+      } catch (e) {
+        console.log(e);
+        return res.status(e.status).render('error', {
+          status: e.status,
+          message: e.message
+        })
+      }
+      const user = await getUserById(req.session.userId);
+      return res.render('rosters/displayRosters', {
+        rosters: user.rosters
+      });
+    }))
+
+router
     .route('/delete/:rosterId')
     .get(sync(async (req, res) => {
       // todo: make sure this roster belongs to current user
       // todo: ask user if this is really what they want to do
-      
+
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
       return res.render('rosters/deleteRoster', {
@@ -165,9 +212,7 @@ router
       });
 
     }))
-    .delete(sync(async (req, res) => { 
-      console.log('in delete');
-      // todo: delete current roster
+    .delete(sync(async (req, res) => {
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await deleteRoster(req.params.rosterId);
 

@@ -2,7 +2,8 @@ const e = require("express");
 const { ObjectId } = require("mongodb");
 const { users } = require("../config/mongoCollections");
 const { stringifyId, statusError } = require("../helpers");
-const { requireString, requireId, requireEmails, requireOptions } = require("../validation");
+const { requireString, requireId, requireEmail, requireEmails } = require("../validation");
+const { getUserByEmail } = require("./users");
 
 // return rosters array that is associated with a given user
 const getRostersByUserId = async (userId) => {
@@ -33,12 +34,14 @@ const getRosterById = async (rosterId) => {
 const createRoster = async (userId, label, students, assistants) => {
   userId = requireId(userId, 'id');
   label = requireString(label, 'roster label');
-  students = requireOptions(students, 'students');
+  students = requireEmails(students, 'students');
   if(assistants.length===0) {
     assistants = [];
   } else {
-    assistants = requireOptions(assistants, 'assistants');
+    assistants = requireEmails(assistants, 'assistants');
   }
+
+  // todo: check for duplicate emails
 
   const usersCol = await users();
   /* const failedToAdd = [];
@@ -188,10 +191,10 @@ const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
   return {addedToRoster: 'true'};
 };
 
-const removePersonFromRoster = async (rosterId, userId, category) => {
+const removePersonFromRoster = async (userId, rosterId, studentEmail, category) => {
   rosterId = requireId(rosterId, 'roster id');
   userId = requireId(userId, 'user id');
-  //email = requireEmail(email, 'email').trim().toLowerCase();
+  studentEmail = requireEmail(studentEmail, 'email');
   category = requireString(category, 'category').trim();
 
   const usersCol = await users();
@@ -201,13 +204,27 @@ const removePersonFromRoster = async (rosterId, userId, category) => {
     {"rosters._id": rosterId}
   );
 
+  if(!userWithRoster._id.equals(userId)) {
+    throw statusError(401, `Roster cannot be edited by current user`);
+  }
+
+  const student = await getUserByEmail(studentEmail);
+  if(student === null) {
+    throw statusError(404, `${studentEmail} does not exist`);
+  }
+
+  const roster = await getRosterById(rosterId);
+  if(!roster.students.includes(studentEmail) && !roster.assistants.includes(studentEmail)) {
+    throw statusError(404, `${studentEmail} is not in this roster`);
+  }
+
   const updatedInfo = await usersCol.updateOne(
-    {_id: userWithRoster._id},
-    {$pull: {['rosters.' + category]: {_id: userId}}}
+    {_id: userId, 'rosters._id': rosterId},
+    {$pull: {['rosters.$.' + category]: studentEmail}}
   );
 
   if (updatedInfo.modifiedCount === 0) {
-    throw statusError(500, `Error: could not remove ${studentId || "student"} from roster successfully`);
+    throw statusError(500, `Error: could not remove ${studentEmail || "student"} from roster successfully`);
   }
 
   return {addedToRoster: 'true'};
