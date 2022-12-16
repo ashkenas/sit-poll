@@ -1,14 +1,9 @@
 const express = require('express');
 const { getUserByEmail, validateUser } = require('../data/users');
 const { validate } = require('../validation')
-const { sync } = require('../helpers');
+const { statusError, sync } = require('../helpers');
 const router = express.Router();
 const bcrypt = require('bcrypt')
-
-const errorObject = function(code, message) {
-    return {error: code,
-            message: message};
-}
 
 router
     .route('/')
@@ -19,9 +14,9 @@ router
         const {email, password} = req.body
         const user = await getUserByEmail(email.toLowerCase());
         if(user === null)
-            return res.render("login", errorObject(400, "Either the username or password is invalid"))  
+            throw statusError(400, "Either the username or password is invalid") 
         if(!await bcrypt.compare(password, user.pass_hash)) 
-            return res.render("login", errorObject(400, "Either the username or password is invalid"))  
+            throw statusError(400, "Either the username or password is invalid")
 
         try {
             if(JSON.stringify(await validateUser(email, password)) === JSON.stringify({authenticatedUser: true})) {
@@ -32,10 +27,10 @@ router
                 return res.redirect(req.session.redirect || '/');
             }
             else {
-                return res.render("login", errorObject(500, "Internal server error."))
+                throw statusError(500, "Internal server error.")
             }
         } catch (e) {
-            return res.render("login",  errorObject(400, e))
+            throw statusError(400, e)
         }
     }));
 
