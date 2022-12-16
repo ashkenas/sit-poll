@@ -5,7 +5,7 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { createPoll, addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -42,9 +42,14 @@ router
         }))
         .post(sync(async (req, res) => { // Create poll
             //console.log(req.body.availDate)
-            let date = new Date(req.body.availDate);
-            console.log(date);
-            notImplemented(res);
+            let title = req.body.pollTitle;
+            let choices = req.body.option;
+            let authorID = req.session.userId;
+            let public_bool = false; //fix this later
+            let close_date = req.body.availDate;
+            let rosterId = req.body.roster;
+            let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
+            if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
     }));
 
 router
