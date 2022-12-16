@@ -13,16 +13,27 @@ router
     .route('/')
     .get(sync(async (req, res) => { // View polls
         // Update this with an actual page
-        res.json(await getAllPollsInfo(req.session.userId));
+        var polls = await getAllPollsInfo(req.session.userId);
+        
+        for (var poll of polls){
+            var author = await getUserById(poll.author);
+            var author_display = author.display_name;
+            poll.author = author_display;
+            console.log(author_display)
+        }
+        console.log(polls);
+
+        res.render("polls/viewPolls", {polls: polls});
+
+        //res.json(await getAllPollsInfo(req.session.userId));
     }))
-    .post(sync(async (req, res) => { // Create poll
+    .post(sync(async (req, res) => { // view specific poll
         notImplemented(res);
     }));
 
     router
         .route('/create')
         .get(sync(async (req, res) => { // load pollCreate page with rosters if user has authorization to create polls
-            // Update this with an actual page
             var user = await getUserById(req.session.userId);
             if (user.is_manager)
             {
@@ -41,7 +52,6 @@ router
             }
         }))
         .post(sync(async (req, res) => { // Create poll
-            //console.log(req.body.availDate)
             let title = req.body.pollTitle;
             let choices = req.body.option;
             let authorID = req.session.userId;
@@ -49,7 +59,6 @@ router
             let close_date = req.body.availDate;
             let rosterId = req.body.roster;
             let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
-            //console.log(rosterId);
             if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
     }));
 
@@ -90,6 +99,7 @@ router
 router
     .route('/:id/edit')
     .get(sync(async (req, res) => { // Edit page for poll
+
         notImplemented(res);
     }));
 
