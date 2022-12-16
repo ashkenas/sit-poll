@@ -41,7 +41,7 @@ const createRoster = async (userId, label, students, assistants) => {
     assistants = requireEmails(assistants, 'assistants');
   }
 
-  // todo: check for duplicate emails
+  // todo: check for existing label (don't want two rosters of the same name)
 
   const usersCol = await users();
   const failedToAdd = [];

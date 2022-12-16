@@ -12,7 +12,7 @@ p.error {
 }
 
 /* adaptation from https://stackoverflow.com/questions/8357058/how-to-make-an-html-anchor-tag-or-link-look-like-a-button */
-.button {
+.updateRoster {
     display: block;
     width: 155px;
     height: 25px;
@@ -21,7 +21,7 @@ p.error {
     text-align: center;
     border-radius: 5px;
     color: white;
-    line-height: 25px;
+    line-height: 5px;
 }
 
 /* adapted from https://www.w3schools.com/css/tryit.asp?filename=trycss_table_fancy */
@@ -51,4 +51,8 @@ table th {
 caption {
     font-weight: bolder;
     font-size: larger;
+}
+
+h1 {
+    font-size: larger !important;
 }

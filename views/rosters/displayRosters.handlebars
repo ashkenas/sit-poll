@@ -16,23 +16,23 @@
           <td>{{this}}</td>        
           {{!-- todo: change route to file that handles student stuff --}}  
           <td>Student</td>
-          <td><a href="/rosters/edit/{{../this._id}}/remove/{{this}}" class="button">Remove student</a></td>
+          <td><a href="/rosters/edit/{{../this._id}}/remove/{{this}}" class="updateRoster">Remove student</a></td>
         </tr>
       {{/each}}
       {{#each this.assistants}}
         <tr>
           <td>{{this}}</td>
           <td>TA</td>
-          <td><a href="/rosters/edit/{{../this._id}}/remove/{{this}}" class="button">Remove assistant</a></td>
+          <td><a href="/rosters/edit/{{../this._id}}/remove/{{this}}" class="updateRoster">Remove assistant</a></td>
         </tr>
       {{/each}}
     </table>
-    <a href="/rosters/edit/title/{{this._id}}" class="button">Change title</a>
+    <a href="/rosters/edit/title/{{this._id}}" class="updateRoster">Change title</a>
 
     {{!-- todo: change route to file that handles student stuff --}}  
-    <a href="/rosters/edit/add/{{this._id}}" class="button">Add student(s)</a>
+    <a href="/rosters/edit/add/{{this._id}}" class="updateRoster">Add student(s)</a>
     
-    <a href="/rosters/delete/{{this._id}}" class="button">Delete roster</a>
+    <a href="/rosters/delete/{{this._id}}" class="updateRoster">Delete roster</a>
     <br><br>
   {{/each}}
 {{else}}
