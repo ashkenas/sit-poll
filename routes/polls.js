@@ -49,6 +49,7 @@ router
             let close_date = req.body.availDate;
             let rosterId = req.body.roster;
             let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
+            //console.log(rosterId);
             if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
     }));
 

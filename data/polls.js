@@ -7,12 +7,12 @@ const { getUserById } = require("./users");
 
 
 const createPoll = async (title, choices, authorID, public_bool, close_date, rosterId) =>{
-    requireString(title, 'title');
-    requireOptions(choices, 'choices');
-    requireId(authorID, 'authorID');
-    requireBoolean(public_bool, 'public_bool');
-    requireDate(close_date, 'poll close date');
-    requireId(rosterId, 'roster');
+    title = requireString(title, 'title');
+    choices = requireOptions(choices, 'choices');
+    authorID = requireId(authorID, 'authorID');
+    public_bool = requireBoolean(public_bool, 'public_bool');
+    close_date = requireDate(close_date, 'poll close date');
+    rosterId = requireId(rosterId, 'roster');
 
     let posted_date = new Date();
     let closed = new Date(close_date);
@@ -40,14 +40,13 @@ const createPoll = async (title, choices, authorID, public_bool, close_date, ros
 
     const userCol = await users();
 
-    //This does not work
-    const updateInfo = userCol.updateOne(
+    const updateInfo = await userCol.updateOne(
         //query
         {rosters:{$elemMatch:{_id:rosterId}}},
         {$push: {"rosters.$.polls":id}}
     );
 
-    console.log(updateInfo.result);
+    //console.log(updateInfo.modifiedCount);
 
     //need to add poll to roster
     retval = {
