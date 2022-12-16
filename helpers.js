@@ -1,6 +1,4 @@
-const crypto = require('crypto');
-const promisify = require('util').promisify;
-const pbkdf2 = promisify(crypto.pbkdf2);
+const bcrypt = require('bcrypt')
 
 module.exports = {
     statusError(status, message) {
@@ -17,8 +15,6 @@ module.exports = {
         return (req, res, next) => func(req, res, next).catch(next);
     },
     async hashPassword (password) {
-        const salt = crypto.randomBytes(12); 
-        const pass = (await pbkdf2(password, salt, 10000, 64, 'sha512')).toString('hex');
-        return `${salt.toString('hex')}$${pass}`;
+        return await bcrypt.hash(password, 4)
     }
 };
