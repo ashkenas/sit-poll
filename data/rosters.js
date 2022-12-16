@@ -5,6 +5,20 @@ const { stringifyId, statusError } = require("../helpers");
 const { requireString, requireId, requireEmail, requireEmails } = require("../validation");
 const { getUserByEmail } = require("./users");
 
+const checkOwnership = async (userId, rosterId) => {
+  const usersCol = await users();
+  // returns the user which contains the given roster
+  const userWithRoster = await usersCol.findOne(
+    {"rosters._id": rosterId}
+  );
+
+  if(!userWithRoster._id.equals(userId)) {
+    throw statusError(401, `Roster cannot be edited by current user`);
+  }
+
+  return true;
+}
+
 // return rosters array that is associated with a given user
 const getRostersByUserId = async (userId) => {
   userId = requireId(userId, 'id');
@@ -27,7 +41,6 @@ const getRosterById = async (rosterId) => {
   } else {
     throw statusError(404, `Roster with ID ${rosterId} not found`);
   }
-  
 };
 
 // return user info for which new object is created
@@ -122,19 +135,11 @@ const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
   // todo: double check what error should be thrown here
     throw statusError(400, `${category || "category"} is undefined`);
 
-  const usersCol = await users();
-  console.log('adding people');
-  // returns the user which contains the given roster
-  const userWithRoster = await usersCol.findOne(
-    {"rosters._id": rosterId}
-  );
+  checkOwnership(userId, rosterId);
 
-  if(!userWithRoster._id.equals(userId)) {
-    throw statusError(401, `Roster cannot be edited by current user`);
-  }
+  const usersCol = await users();
 
   const roster = await getRosterById(rosterId);
-  console.log(roster.students);
   let unadded = [];
 
   emailArray.forEach(async (email) => {
@@ -172,16 +177,7 @@ const removePersonFromRoster = async (userId, rosterId, studentEmail, category) 
   studentEmail = requireEmail(studentEmail, 'email');
   category = requireString(category, 'category').trim();
 
-  const usersCol = await users();
-
-  // returns the user which contains the given roster
-  const userWithRoster = await usersCol.findOne(
-    {"rosters._id": rosterId}
-  );
-
-  if(!userWithRoster._id.equals(userId)) {
-    throw statusError(401, `Roster cannot be edited by current user`);
-  }
+  checkOwnership(userId, rosterId);
 
   const student = await getUserByEmail(studentEmail);
   if(student === null) {
@@ -212,14 +208,7 @@ const updateRosterLabel = async (userId, rosterId, label) => {
   label = requireString(label, 'roster label');
   const usersCol = await users();
   
-  // returns the user which contains the given roster
-  const userWithRoster = await usersCol.findOne(
-    {"rosters._id": rosterId}
-  );
-
-  if(!userWithRoster._id.equals(userId)) {
-    throw statusError(401, `Roster cannot be edited by current user`);
-  }
+  checkOwnership(userId, rosterId);
 
   const updatedInfo = await usersCol.updateOne(
     //{_id: userWithRoster._id},

@@ -7,10 +7,8 @@
   <label id="studentLabel" for="studentEmailInput">Student Emails (separated by commas):</label><br>
   <input type="email" placeholder="student@stevens.edu" id="studentEmailInput" name="studentEmailInput" pattern=".+@stevens\.edu" multiple required><br>
 
-  {{!--todo <input type="file" id="file" name="filename" accept=".csv"><br> --}}
-
   <label id="assistantLabel" for="assistantEmailInput">Assistants:</label><br>
-  <input type="email" placeholder="assistant@stevens.edu" id="assistantEmailInput" name="assistantEmailInput" multiple><br>
+  <input type="email" placeholder="assistant@stevens.edu" id="assistantEmailInput" name="assistantEmailInput" pattern=".+@stevens\.edu" multiple><br>
   
   <button type="submit" id="submit">Submit</button>
 </form>

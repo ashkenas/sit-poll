@@ -81,6 +81,8 @@ const requireEmails = (emails, name) => {
             if(!/[a-zA-Z0-9.]/.test(handle)) {
                 throw statusError(400, `${email} is not a valid email`);
             }
+        } else {
+            throw statusError(400, `${email} is not a valid email`);
         }
         return email.trim().toLowerCase();
     });

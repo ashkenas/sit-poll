@@ -1,4 +1,5 @@
 const express = require('express');
+const xss = require('xss');
 const { validate, requireOptions, requireString, requireId, requireEmail, requireEmails } = require('../validation');
 const router = express.Router();
 const path = require('path');
@@ -11,86 +12,114 @@ const { getUserById } = data.users;
 const { getRostersByUserId, getRosterById, createRoster, deleteRoster, 
   addPersonToRoster, removePersonFromRoster, updateRosterLabel } = data.rosters;
 
-const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
+// todo: double check error throwing and xss calls
+
+const checkAuthorized = async (userId) => {
+  try {
+    const user = await getUserById(userId);
+    return true;
+    //todo: uncomment when we can authorize
+    //return (userId.manager && user.is_manager) || (userId.admin && user.is_admin);
+  } catch (e) {
+    return res.status(e.status).render('error', {
+      status: e.status,
+      message: e.message
+    });
+  }
+}
 
 router
     .route('/')
     .get(sync(async (req, res) => { // View rosters
-        const user = await getUserById(req.session.userId);
-        const rosters = await getRostersByUserId(req.session.userId)
+      if(await checkAuthorized(req.session.userId)) {
         return res.render('rosters/displayRosters', {
           rosters: await getRostersByUserId(req.session.userId)
         });
-        /* if((req.session.manager && user.is_manager) || (req.session.admin && user.is_admin)) {
-          res.render('rosters/displayRosters', {
-            rosters: user.rosters
-          });
-        } else {
-          res.render('error', {
-            status: 403,
-            message: "Unauthorized to access this page"
-          });
-        } */
-    }))
+      } else {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
+    }));
 
 router
     .route('/createRoster')
     .get(sync(async (req, res) => { // Render form to create a roster
-      //todo: redirect to handlebar upon button click with form to create a roster
-      const user = getUserById(req.session.userId);
-      return res.render('rosters/createRoster');
-      /* if((req.session.manager && user.is_manager) || (req.session.admin && user.is_admin)) {
-        res.render('rosters/createRoster');
+      if(await checkAuthorized(req.session.userId)) {
+        return res.render('rosters/createRoster');
       } else {
-        res.render('error', {
+        return res.status(403).render('error', {
           status: 403,
           message: "Unauthorized to access this page"
         });
-      } */
+      }
     }))
     .post(sync(async (req, res) => { // Create roster
-        let {titleInput, studentEmailInput, assistantEmailInput} = req.body;
-        //todo: xss
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
+      let {titleInput, studentEmailInput, assistantEmailInput} = req.body;
+      //todo: xss
+      xss(titleInput);
+      xss(studentEmailInput);
+      xss(assistantEmailInput);
+      try {
         titleInput = requireString(titleInput, 'Title');
-        studentEmailInput = studentEmailInput.split(',');
-        studentEmailInput = requireEmails(studentEmailInput, 'Student Emails');
+        studentEmailInput = requireEmails(studentEmailInput.split(','), 'Student Emails');
         if(!assistantEmailInput.trim()) {
           assistantEmailInput = [];
         } else {
-          assistantEmailInput = assistantEmailInput.split(',');
-          assistantEmailInput = requireEmails(assistantEmailInput, 'Assistant Emails');
+          assistantEmailInput = requireEmails(assistantEmailInput.split(','), 'Assistant Emails');
         }
         const updatedUser = await createRoster(req.session.userId, titleInput, studentEmailInput, assistantEmailInput);
         return res.redirect('/rosters');
+      } catch (e) {
+        return res.status(e.status).render('error', {
+          status: e.status,
+          message: e.message
+        });
+      }  
     }));
 
 router
     .route('/edit/title/:rosterId')
     .get(sync(async (req, res) => { // Render form to create a roster
-      // todo: render edit page
-      
-      //const user = await getUserById(req.session.userId);
-      // todo: check the rosterid is valid
-
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
+
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
+      
       return res.render('rosters/editRosterTitle', {
         rosterLabel: roster.label,
         rosterId: req.params.rosterId
       });
-      
-      // todo: check to make sure roster is owned by user logged in
-
     }))
     .patch(sync(async (req, res) => { 
-      
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
+
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
       
       let {titleInput} = req.body;
       //todo: xss
-      titleInput = requireString(titleInput, 'Title');
+      xss(titleInput);
+      
       try {
+        titleInput = requireString(titleInput, 'Title');
         const updatedRoster = await updateRosterLabel(req.session.userId, req.params.rosterId, titleInput);
       } catch (e) {
         return res.status(e.status).render('error', {
@@ -102,34 +131,42 @@ router
       return res.render('rosters/displayRosters', {
         rosters: user.rosters
       });
-    }))
-
+    }));
 
 router
     .route('/edit/add/:rosterId')
     .get(sync(async (req, res) => { // Render form to create a roster
-      // todo: render edit page
-      
-      //const user = await getUserById(req.session.userId);
-      // todo: check the rosterid is valid
-
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
+
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
+
       return res.render('rosters/addStudents', {
         rosterLabel: roster.label,
         rosterId: req.params.rosterId
       });
-      
-      // todo: check to make sure roster is owned by user logged in
-
     }))
     .patch(sync(async (req, res) => { 
       
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
+
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
       
       let {studentEmailInput, category} = req.body;
       //todo: xss
+      xss(studentEmailInput);
+      xss(category);
       studentEmailInput = requireString(studentEmailInput, 'Email(s)');
       studentEmailInput = requireEmails(studentEmailInput.split(','), 'Email(s)');
       category = requireString(category, 'category');
@@ -137,7 +174,6 @@ router
       try {
         const updatedRoster = await addPersonToRoster(req.session.userId, req.params.rosterId, studentEmailInput, category);
       } catch (e) {
-        console.log(e);
         return res.status(e.status).render('error', {
           status: e.status,
           message: e.message
@@ -147,19 +183,22 @@ router
       return res.render('rosters/displayRosters', {
         rosters: user.rosters
       });
-    }))
+    }));
 
 router
     .route('/edit/:rosterId/remove/:studentEmail')
     .get(sync(async (req, res) => { // Render form to create a roster
-      // todo: ask user if this is what they want to do
-      
-      //const user = await getUserById(req.session.userId);
-      // todo: check the rosterid is valid
-      // todo: check to make sure roster is owned by user logged in
       req.params.studentEmail = requireEmail(req.params.studentEmail, 'student email');
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
+
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
+
       return res.render('rosters/deleteStudent', {
         rosterLabel: roster.label,
         rosterId: req.params.rosterId,
@@ -168,10 +207,14 @@ router
 
     }))
     .patch(sync(async (req, res) => { 
-      // todo: delete student
-      
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
       req.params.studentEmail = requireEmail(req.params.studentEmail, 'student email');
       let category = '';
       if(roster.assistants.includes(req.params.studentEmail)) {
@@ -181,10 +224,8 @@ router
       }
 
       try {
-        console.log('delete student');
         const updatedRoster = await removePersonFromRoster(req.session.userId, req.params.rosterId, req.params.studentEmail, category);
       } catch (e) {
-        console.log(e);
         return res.status(e.status).render('error', {
           status: e.status,
           message: e.message
@@ -194,16 +235,19 @@ router
       return res.render('rosters/displayRosters', {
         rosters: user.rosters
       });
-    }))
+    }));
 
 router
     .route('/delete/:rosterId')
     .get(sync(async (req, res) => {
-      // todo: make sure this roster belongs to current user
-      // todo: ask user if this is really what they want to do
-
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
       return res.render('rosters/deleteRoster', {
         rosterLabel: roster.label,
         students: roster.students,
@@ -216,10 +260,17 @@ router
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await deleteRoster(req.params.rosterId);
 
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(403).render('error', {
+          status: 403,
+          message: "Unauthorized to access this page"
+        });
+      }
+
       const user = await getUserById(req.session.userId);
       return res.render('rosters/displayRosters', {
         rosters: user.rosters
       });
-    }))
+    }));
 
 module.exports = router;
