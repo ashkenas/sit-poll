@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireId, validate, validReactions } = require('../validation');
+const { requireId, requireDate, requireString, validate, validReactions, requireOptions } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
@@ -50,12 +50,13 @@ router
 
                 res.render('polls/pollCreate', {
                     rosters: rosters});
+
             } else {
                 throw statusError(403, 'Not authorized to create poll.')
             }
         }))
         .post(sync(async (req, res) => { // Create poll
-            let title = req.body.pollTitle;
+            let title = req.body.pollTitle;            
             let choices = req.body.option;
             let authorID = req.session.userId;
             let public_bool = false; //fix this later
@@ -135,7 +136,7 @@ router
         const poll_close_date = poll.close_date;
         //const poll_posted_date = poll.posted_date;
         const poll_opCounter = counter;
-        //add optionCounter as passed variable. optionCounter = #options +1
+        //add optionCounter as passed variable. optionCounter = #options
         res.render("polls/pollEdit", {
             id: poll_id,
             title: poll_title,
@@ -147,9 +148,13 @@ router
     }))
     .post(sync(async (req, res) => { //update poll
         const title = req.body.pollTitle;
+        title = requireString(title, 'title');
         const choices = req.body.option;
+        choices = requireOptions(choices, 'choices');
         const poll_id = req.body.pollId;
+        poll_id = requireId(poll_id, 'poll_id');
         const close_date = req.body.availDate;
+        close_date = requireDate(close_date, 'close_date');
         const stat = await updatePoll(poll_id, title, choices, close_date);
         //check if update is successful
         if (stat.status === "success") {res.redirect(`/polls/${stat.poll_Id}/results`);}
