@@ -1,11 +1,11 @@
 const express = require('express');
-const { validate, validReactions } = require('../validation');
+const { requireId, validate, validReactions } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, createPoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, getPollById, createPoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -103,8 +103,36 @@ router
 router
     .route('/:id/edit')
     .get(sync(async (req, res) => { // Edit page for poll
+        const poll = await getPollById(req.params.id);
+        //console.log(requireId(req.session.userId, "id"));
+        //console.log(poll.author);
+        const user_id = requireId(req.session.userId, "id");
+        const poll_author = requireId(poll.author, "poll author");
+        console.log(user_id);
+        console.log(poll_author);
+        if (!user_id.equals(poll_author)){throw statusError(403, "You may not edit a poll you did not create");}
+        //console.log(poll.votes.length);
+        if (poll.votes.length > 0){throw statusError(403, 'You may not edit the poll after the first vote is cast');}
+        //console.log(poll);
+        const poll_id = poll._id;
+        const poll_title = poll.title;
+        const poll_choices = poll.choices;
+        const poll_close_date = poll.close_date;
+        const poll_posted_date = poll.posted_date;
+        //add optionCounter as passed variable. optionCounter = #options +1
+        res.render("polls/pollEdit", {
+            id: poll_id,
+            title: poll_title,
+            choices: poll_choices,
+            close_date: poll_close_date,
+            posted_date: poll_posted_date
+        })
+
 
         notImplemented(res);
+    }))
+    .post(sync(async (req, res) => { //update poll
+       notImplemented(res); 
     }));
 
 router
