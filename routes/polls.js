@@ -1,5 +1,5 @@
 const express = require('express');
-const { validate, validReactions } = require('../validation');
+const { validate, validReactions, requireId } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
@@ -15,54 +15,38 @@ router.use('/:id', requirePoll('id'))
 router
     .route('/')
     .get(sync(async (req, res) => { // View polls
-        // Update this with an actual page
-        var polls = await getAllPollsInfo(req.session.userId);
+        const polls = await getAllPollsInfo(req.session.userId);
         
-        for (var poll of polls){
-            var author = await getUserById(poll.author);
-            var author_display = author.display_name;
-            poll.author = author_display;
-            console.log(author_display)
-        }
-        console.log(polls);
+        for (const poll of polls)
+            poll.author = (await getUserById(poll.author)).display_name;
 
-        res.render("polls/viewPolls", {polls: polls});
-
-        //res.json(await getAllPollsInfo(req.session.userId));
+        res.render("polls/viewPolls", { polls: polls });
     }))
-    .post(sync(async (req, res) => { // view specific poll
-        notImplemented(res);
-    }));
+    .post(validate(
+        ['title', 'choices', 'close_date'],
+        { roster: requireId }
+    ), sync(async (req, res) => { // Create poll
+        const close_date = req.body.close_date.getTime();
+        if (close_date < Date.now())
+            throw statusError(400, 'Close date must be after current date.');
+        if (req.body.choices.length < 2)
+            throw statusError(400, 'Poll must have at least 2 options.');
+        if (req.body.title.length < 5)
+            throw statusError(400, 'Title must be at least 5 characters long');
 
-    router
-        .route('/create')
-        .get(sync(async (req, res) => { // load pollCreate page with rosters if user has authorization to create polls
-            var user = await getUserById(req.session.userId);
-            if (user.is_manager)
-            {
-                var rosters = [];
-                for (let roster of user.rosters){
-                    rosters.push(roster);
-                }
-                
-                //this handles taking current date and changing it to format to fit datetime-local min in pollCreate
-                // work this out later
+        const stat = await createPoll(
+            req.body.title,
+            req.body.choices,
+            req.session.userId,
+            req.session.admin,
+            close_date,
+            req.body.roster
+        );
 
-                res.render('polls/pollCreate', {
-                    rosters: rosters});
-            } else {
-                throw statusError(403, 'Not authorized to create poll.')
-            }
-        }))
-        .post(sync(async (req, res) => { // Create poll
-            let title = req.body.pollTitle;
-            let choices = req.body.option;
-            let authorID = req.session.userId;
-            let public_bool = false; //fix this later
-            let close_date = req.body.availDate;
-            let rosterId = req.body.roster;
-            let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
-            if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
+        if (stat.success)
+            res.json({ redirect: `/polls/${stat.pollId}/results` });
+        else    
+            throw statusError(500, 'Failed to create poll.');
     }));
 
 router

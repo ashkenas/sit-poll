@@ -1,6 +1,7 @@
 const path = require('path');
 const pollRoutes = require('./polls');
 const loginRoutes = require('./login');
+const createRoutes = require('./create');
 
 const notFound = (name) => (req, res) => {
     res.status(404).render('error', {
@@ -40,6 +41,7 @@ const constructorMethod = (app) => {
     app.get('/', (req, res) => res.redirect('/polls'));
     app.use('/login', loginRoutes);
     app.use('/polls', pollRoutes);
+    app.use('/create', createRoutes);
 
     app.use('*', notFound('Page'))
 };

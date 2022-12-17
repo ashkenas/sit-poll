@@ -1,69 +1,126 @@
 <div class="section">
-    <P>This is the poll create page</P>
-
-    <form id = "pollCreateForm" method="post">
-        <span>Select a roster to assign the poll to:</span>
-        <select id="roster" name="roster">
-            {{#each rosters}}
-                <option value="{{_id}}">{{label}}</option>
-            {{/each}}
-        </select> <br>
-        <label for="avail-date">Poll available until:</label>
-        <input type="datetime-local" id="availDate" name="availDate"> <br><br> <!--value="{{dateTimeLocalValue}}" min="{{dateTimeLocalValue}}"-->
-
-        <label for="pollTitle">Poll Title:</label>
-        <input type="text" id="pollTitle" name="pollTitle" placeholder="Title"><br><br>
-        <label for="option1">Choice 1</label> 
-        <input type="text" id="option1" name="option" placeholder="Choice 1"><br>
-        <label for="option2">Choice 2</label>
-        <input type="text" id="option2" name="option" placeholder="Choice 2"><br>
-        
-    </form>
-    <button onclick="createOption()">Add Option</button>
-    <button onclick="removeOption()">Remove Option</button><br>
-    <button type="submit" form="pollCreateForm">Submit</button>
-
-        <script>
-            
-            var form = document.getElementById("pollCreateForm");
-            var optionCounter = 3;
-             
-            function createOption(){
-                var name = "option" + optionCounter;
-                var option = document.createElement("input");
-                option.setAttribute("type","text");
-                option.setAttribute("id",name);
-                option.setAttribute("name","option");
-                option.setAttribute("placeholder","Choice "+optionCounter);
-
-                var label = document.createElement("label");
-                label.setAttribute("for",name);
-                label.setAttribute("id","label"+optionCounter);
-                label.innerText="Choice "+optionCounter+":";
-
-                var br = document.createElement("br");
-                br.setAttribute("id", "br"+optionCounter);
-
-                form.appendChild(label);
-                form.appendChild(option);
-                form.appendChild(br);
-                optionCounter+=1;
-            }
-
-            function removeOption(){
-                if(optionCounter>3){
-                    optionCounter-=1;
-                    var label = document.getElementById("label"+optionCounter);
-                    var br = document.getElementById("br"+optionCounter);
-                    var option = document.getElementById("option"+optionCounter);
-
-                    label.remove();
-                    br.remove();
-                    option.remove();
-                }else {
-                    //do nothing
-                }
-            }
-
-        </script>
+    <div class="container is-max-desktop">
+        <h1 class="title">Create Poll</h1>
+        <form id="poll-form">
+            <div class="field">
+                <label for="roster" class="label">Roster to Poll</label>
+                <div class="control">
+                    <select class="select" id="roster" name="roster">
+                        {{#each rosters}}
+                            <option value="{{_id}}" {{#unless @index}}selected{{/unless}}>{{label}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label for="close_date" class="label">Poll Close Date</label>
+                <div class="control">
+                    <input class="input" type="datetime-local" id="close_date" name="close_date">
+                </div>
+                <p id="date-error" class="help error is-danger"></p>
+            </div>
+            <div class="field">
+                <label for="title" class="label">Title</label>
+                <div class="control">
+                    <input class="input" type="text" id="title" name="title" placeholder="Title">
+                </div>
+                <p id="title-error" class="help error is-danger"></p>
+            </div>
+            <div class="field">
+                <label for="option1" class="label">Choice 1</label>
+                <div class="control is-expanded">
+                    <input class="input" type="text" id="option1" name="choices" placeholder="Choice 1">
+                </div>
+                <p id="option-error-1" class="help error is-danger"></p>
+            </div>
+            <div class="field">
+                <label for="option2" class="label">Choice 2</label>
+                <div class="control is-expanded">
+                    <input class="input" type="text" id="option2" name="choices" placeholder="Choice 2">
+                </div>
+                <p id="option-error-2" class="help error is-danger"></p>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" id="add-option" type="button">Add Option</button>
+                <button class="button is-danger" id="remove-option" type="button" style="display: none;">Remove Last Option</button>
+                <input class="button is-link" type="submit">
+            </div>
+        </form>
+    </div>
 </div>
+<template id="option-template">
+    <div class="field">
+        <label for="option3" class="label">Choice 3</label>
+        <div class="control is-expanded">
+            <input class="input" type="text" id="option3" name="choices" placeholder="Choice 3">
+        </div>
+        <p id="option-error-3" class="help error is-danger"></p>
+    </div>
+</template>
+<script>
+let options = 2;
+const optionTemplate = document.getElementById('option-template').content.firstElementChild;
+const buttons = document.querySelector('.buttons');
+const removeButton = document.getElementById('remove-option');
+const errorManagers = {
+    option1: errorManager('option-error-1'),
+    option2: errorManager('option-error-2')
+};
+
+document.getElementById('add-option').addEventListener('click', (event) => {
+    const temp = optionTemplate.cloneNode(true);
+    const label = temp.querySelector('label');
+    label.for = `option${++options}`;
+    label.innerText = `Choice ${options}`;
+    const input = temp.querySelector('input');
+    input.id = `option${options}`;
+    input.placeholder = `Choice ${options}`;
+    temp.querySelector('p').id = `option-error-${options}`;
+    buttons.before(temp);
+    removeButton.style.display = 'block';
+    errorManagers[`option${options}`] = errorManager(`option-error-${options}`);
+});
+
+removeButton.addEventListener('click', (event) => {
+    const fields = document.querySelectorAll('.field');
+    fields[fields.length - 1].remove();
+    delete errorManagers[`option${options}`];
+    options--;
+    removeButton.style.display = options > 2 ? 'block' : 'none';
+});
+
+const titleManager = errorManager('title-error');
+const dateManager = errorManager('date-error');
+
+handleForm('poll-form', 'POST', '/polls', (formData) => {
+    const roster = formData.get('roster');
+
+    const close_date = new Date(formData.get('close_date'));
+    if (isNaN(close_date))
+        return dateManager('Must provide a valid date.');
+    if (close_date < Date.now())
+        return dateManager('Close date must be after current date.');
+    dateManager();
+
+    const title = formData.get('title');
+    if (title.length < 5)
+        return titleManager('Title must be at least 5 characters.');
+    titleManager();
+
+    const optionInputs = document.querySelectorAll('input[id*="option"]');
+    const options = [];
+    for (const input of optionInputs) {
+        if (!input.value)
+            return errorManagers[input.id]('Choice cannot be blank.');
+        errorManagers[input.id]();
+        options.push(input.value);
+    };
+
+    return {
+        roster: roster,
+        title: title,
+        close_date: close_date,
+        choices: options
+    };
+});
+</script>
