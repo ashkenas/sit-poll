@@ -82,6 +82,10 @@ app.engine('handlebars', exphbs.engine({
             const strMinutes = comp.getMinutes().toString().padStart(2, '0');
             return `${strHour}:${strMinutes} ${hour >= 12 ? 'PM' : 'AM'}`;
         },
+        closeDate: (d) => {
+            const date = new Date(d);
+            return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+        },
         json: (data) => JSON.stringify(data, null, 4)
     }
 }));

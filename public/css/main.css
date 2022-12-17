@@ -10,3 +10,25 @@ p.error {
     color: #485fc7;
     background-color: white;
 }
+
+.poll-title {
+    padding-bottom: .5rem;
+    border-bottom: 1px solid black;
+}
+
+.poll-listing {
+    border-radius: 1rem;
+    border: 1px solid #a8a8a8;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.poll-listing:hover {
+    border: 1px solid black;
+    background-color: #f7f7f7;
+}
+
+.poll-listing:active {
+    border: 1px solid #6187d2;
+    background-color: #ecf3ff;
+}
