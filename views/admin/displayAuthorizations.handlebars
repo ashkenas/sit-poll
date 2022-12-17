@@ -1,0 +1,41 @@
+<h1>Authorizations</h1>
+
+{{#if managers.length}}
+  <table>
+    <caption>Professors/Managers</caption>
+    <tr>
+      <th>Manager Email</th>
+      <th></th>
+    </tr>
+    {{#each managers}}
+      <tr>
+        <td>{{this}}</td>
+        <td><a href="/admin/remove/manager/{{this}}" class="updateRoster">Remove manager</a></td>
+      </tr>
+    {{/each}} 
+  </table>
+  
+  {{!-- todo: change route to file that handles student stuff --}}  
+  <a href="/admin/add/manager" class="updateRoster">Add manager</a>
+  <br><br>
+{{/if}}
+
+{{#if admins.length}}
+  <table>
+    <caption>Administrators</caption>
+    <tr>
+      <th>Admin Email</th>
+      <th></th>
+    </tr>
+    {{#each admins}}
+      <tr>
+        <td>{{this}}</td>
+        <td><a href="/admin/remove/admin/{{this}}" class="updateRoster">Remove admin</a></td>
+      </tr>
+    {{/each}} 
+  </table>
+  
+  {{!-- todo: change route to file that handles student stuff --}}  
+  <a href="/admin/add/admin" class="updateRoster">Add admin</a>
+  <br><br>
+{{/if}}

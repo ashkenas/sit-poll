@@ -189,6 +189,8 @@ const removePersonFromRoster = async (userId, rosterId, studentEmail, category) 
     throw statusError(404, `${studentEmail} is not in this roster`);
   }
 
+  const usersCol = await users();
+
   const updatedInfo = await usersCol.updateOne(
     {_id: userId, 'rosters._id': rosterId},
     {$pull: {['rosters.$.' + category]: studentEmail}}

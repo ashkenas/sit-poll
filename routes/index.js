@@ -2,6 +2,7 @@ const path = require('path');
 const pollRoutes = require('./polls');
 const loginRoutes = require('./login');
 const rosterRoutes = require('./rosters');
+const adminRoutes = require('./admin');
 
 const notFound = (name) => (req, res) => {
     res.status(404).render('error', {
@@ -42,6 +43,7 @@ const constructorMethod = (app) => {
     app.use('/login', loginRoutes);
     app.use('/polls', pollRoutes);
     app.use('/rosters', rosterRoutes);
+    app.use('/admin', adminRoutes);
 
     app.use('*', notFound('Page'))
 };
