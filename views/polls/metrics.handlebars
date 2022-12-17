@@ -1,0 +1,83 @@
+<div class="section">
+    <div class="container is-max-desktop">
+        <h1 class="title is-1">Metrics</h1>
+        <div class="buttons">
+            <a class="button is-info" href="/polls/{{poll._id}}/results">Results</a>
+        </div>
+        <h2 class="title">{{poll.title}}</h2>
+        <p class="subtitle">By <span>{{author}}</span></p>
+        <div class="tabs is-boxed">
+            <ul>
+                <li class="is-active"><a data-name="metric-overview">Overview</a></li>
+                {{#each metrics}}
+                    <li><a data-name="metric-{{this.name}}">{{this.handle}}</a></li>
+                {{/each}}
+            </ul>
+        </div>
+        <div id="metric-overview">
+            {{#each metrics}}
+                <section class="section">
+                    <h3 class="title is-5">{{this.handle}}</h3>
+                    {{#each this.totals}}
+                        <div>
+                            <div class="media">
+                                <div class="media-left">
+                                    <label for="{{../handle}}-{{@index}}" class="label">{{@key}}</label>
+                                </div>
+                                <div class="media-content"></div>
+                                <div class="media-right">
+                                    <p>{{this.total}} ({{this.ratio}}%)</p>
+                                </div>
+                            </div>
+                            <progress id="{{../handle}}-{{@index}}" class="progress" max="100" value="{{this.ratio}}"></progress>
+                        </div>
+                    {{/each}}
+                </section>
+            {{/each}}
+        </div>
+        {{#each metrics}}
+            <div id="metric-{{this.name}}">
+                {{#each this.values}}
+                    <section class="section">
+                        <h3 class="title is-5">{{@key}}</h3>
+                        {{#each this}}
+                            <div>
+                                <div class="media">
+                                    <div class="media-left">
+                                        <label for="{{id}}" class="label">{{this.choice}}</label>
+                                    </div>
+                                    <div class="media-content"></div>
+                                    <div class="media-right">
+                                        <p>{{this.votes}} ({{this.ratio}}%)</p>
+                                    </div>
+                                </div>
+                                <progress id="{{id}}" class="progress" max="100" value="{{this.ratio}}"></progress>
+                            </div>
+                        {{/each}}
+                    </section>
+                {{/each}}
+            </div>
+        {{/each}}
+    </div>
+</div>
+<script>
+let lastSelected = document.querySelector('.is-active > a');
+const pages = [...document.querySelectorAll('[id*="metric-"]')].reduce((p, c) => {
+    p[c.id] = c;
+    return p;
+}, {});
+
+for (const page in pages) {
+    pages[page].style.display = 'none';
+}
+pages[lastSelected.getAttribute('data-name')].style.display = 'block';
+document.querySelectorAll('li > a').forEach(tab => {
+    tab.addEventListener('click', (event) => {
+        lastSelected.parentElement.classList.remove('is-active');
+        pages[lastSelected.getAttribute('data-name')].style.display = 'none';
+        lastSelected = event.target;
+        lastSelected.parentElement.classList.add('is-active');
+        pages[lastSelected.getAttribute('data-name')].style.display = 'block';
+    });
+});
+</script>

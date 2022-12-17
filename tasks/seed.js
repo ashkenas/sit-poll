@@ -107,7 +107,7 @@ const generateRoster = async (name, size, majors, s) => {
         const [major, school] = randomMajor(majors);
         const dob = new Date(Math.floor(Math.random() * 4) + 2001, Math.floor(Math.random() * 12), Math.floor(Math.random() * 27));
         const student = await User(`student${s+i}@stevens.edu`, `password${s+i}`, `Student ${s + i}`,
-            major, school, Math.random() > .5 ? 'F' : 'M', dob.getTime(), dob.getFullYear() + 22, false, false);
+            major, school, Math.random() > .5 ? 'F' : 'M', dob, dob.getFullYear() + 22, false, false);
 
         users.push(student);
         students.push(student.email);
