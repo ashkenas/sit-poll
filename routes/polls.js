@@ -5,7 +5,7 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -68,17 +68,30 @@ router
     .get(sync(async (req, res) => { // Results page for poll
         const vote = await getVote(req.params.id, req.session.userId);
         const poll = await getPollResults(req.params.id);
-        if (vote === null && poll.close_date > Date.now())
+        if (vote === null && poll.close_date > Date.now() && !req.session.manager && !req.session.admin)
             return res.redirect(`/polls/${req.params.id.toString()}`);
-        if (req.accepts('html')) {
-            res.render('polls/results', {
-                poll: poll,
-                vote: vote === null ? -1 : vote,
-                userId: req.session.userId,
-                reaction: await getReaction(req.params.id, req.session.userId),
-                author: (await getUserById(poll.author)).display_name,
-            });
-        }
+
+        res.render('polls/results', {
+            poll: poll,
+            vote: vote === null ? -1 : vote,
+            userId: req.session.userId,
+            reaction: await getReaction(req.params.id, req.session.userId),
+            author: (await getUserById(poll.author)).display_name,
+        });
+    }));
+    
+router
+    .route('/:id/metrics')
+    .get(sync(async (req, res) => { // Results page for poll
+        const poll = await getPollResults(req.params.id);
+        if (!((req.session.manager && !poll.public) || req.session.admin))
+                throw statusError(403, 'Permission denied.');
+
+        res.render('polls/metrics', {
+            poll: poll,
+            author: (await getUserById(poll.author)).display_name,
+            metrics: await getPollMetrics(req.params.id)
+        });
     }));
 
 router

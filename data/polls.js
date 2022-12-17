@@ -250,6 +250,107 @@ const getPollResults = async (id) => {
     return stringifyId(poll);
 };
 
+const getPollMetrics = async (id) => {
+    id = requireId(id, 'id');
+    if (!pollExists(id))
+        throw 'Poll not found.';
+    const poll = await getPollById(id);
+
+    const pollsCol = await polls();
+
+    const metricQuery = async (metric) => {
+        const data = await pollsCol.aggregate([
+            { $match: { _id: id } },
+            { $unwind: '$votes' },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'votes.user',
+                    foreignField: '_id',
+                    as: 'votes.user'
+                }
+            },
+            { $unwind: '$votes.user' },
+            { $addFields:
+                { 
+                    "votes.user.age": { 
+                        $dateDiff: { startDate: "$votes.user.date_of_birth", endDate: "$$NOW", unit: "year" }
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        vote: '$votes.vote',
+                        metricVal: `$votes.user.${metric}`
+                    },
+                    count: { $count: {} }
+                }
+            }
+        ]).toArray()
+        
+        const metricData = {};
+        const totals = {};
+        data.forEach(({ _id: { vote, metricVal }, count }) => {
+            if (!metricData[metricVal]) {
+                metricData[metricVal] = poll.choices.map((choice, i) => {
+                    return {
+                        choice: choice,
+                        votes: 0,
+                        id: `${metric}-${Object.keys(metricData).length}-${i}`
+                    };
+                });
+                totals[metricVal] = 0;
+            }
+
+            metricData[metricVal][vote].votes = count;
+            totals[metricVal] += count;
+        });
+
+        for (const metricVal in metricData) {
+            metricData[metricVal].forEach((vote) =>
+                vote.ratio = Math.floor((vote.votes / totals[metricVal]) * 1000) / 10
+            );
+        }
+
+        const totalVotes = Object.values(totals).reduce((a, b) => a + b, 0);
+        for (const metricVal in totals) {
+            totals[metricVal] = {
+                total: totals[metricVal],
+                ratio: Math.floor((totals[metricVal] / totalVotes) * 1000) / 10
+            };
+        }
+
+        return {
+            totals: totals,
+            values: metricData
+        };
+    };
+
+    return [
+        {
+            name: 'gender',
+            handle: 'Gender',
+            ...(await metricQuery('gender'))
+        },
+        {
+            name: 'major',
+            handle: 'Major',
+            ...(await metricQuery('major'))
+        },
+        {
+            name: 'class_year',
+            handle: 'Class Year',
+            ...(await metricQuery('class_year'))
+        },
+        {
+            name: 'age',
+            handle: 'Age',
+            ...(await metricQuery('age'))
+        }
+    ];
+};
+
 /**
  * Gets a user's reaction on a specific poll.
  * @param {string|ObjectId} pollId The poll's ID
@@ -435,6 +536,7 @@ module.exports = {
     getComment,
     getPollById,
     getPollInfoById,
+    getPollMetrics,
     getPollResults,
     getReaction,
     getVote,
