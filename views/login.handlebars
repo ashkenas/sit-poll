@@ -1,0 +1,29 @@
+<article>
+    <h1>Log In</h1>
+
+    <form id="login-form" method="post">
+        <label for="email">Stevens.edu Email:</label>
+        <input type="text" id="email" name="email" placeholder="email">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" placeholder="password">
+        <input type="submit" value = "Log In">
+    </form>
+    <p id="login-error" class="help is-danger error"></p>
+    <a href="/register">Click here to register!</a>
+</article>
+<script>
+    const showLoginError = errorManager('login-error');
+
+    handleForm('login-form', 'POST', '/login', async (formData) => {
+        const email = formData.get('email')
+        const password = formData.get('password')
+        if(email === "")
+            return showLoginError('An email must be provided')
+        if(password === "")
+            return showLoginError('A password must be provided')
+
+        showLoginError(); // Hides error info if no error
+
+        return {email: email, password: password};
+    });
+</script>
