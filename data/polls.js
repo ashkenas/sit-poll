@@ -271,6 +271,13 @@ const getPollMetrics = async (id) => {
                 }
             },
             { $unwind: '$votes.user' },
+            { $addFields:
+                { 
+                    "votes.user.age": { 
+                        $dateDiff: { startDate: "$votes.user.date_of_birth", endDate: "$$NOW", unit: "year" }
+                    }
+                }
+            },
             {
                 $group: {
                     _id: {
