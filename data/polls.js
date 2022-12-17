@@ -111,6 +111,7 @@ const deletePoll = async(poll_id, user_id) =>{
             await pollCol.insertOne(poll);
             throw statusError(503, 'Poll delete failed');
         }
+        return {status : "success"}
 
     }else {
         throw statusError(403, 'You do not have permission to delete this poll');
@@ -647,6 +648,7 @@ const deleteComment = async (commentId) => {
 module.exports = {
     updatePoll,
     createPoll,
+    deletePoll,
     addComment,
     deleteComment,
     deleteReaction,

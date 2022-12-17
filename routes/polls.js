@@ -4,8 +4,9 @@ const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
+const { stat } = require('fs');
 const { getUserById } = data.users;
-const { addComment, getPollById, createPoll, updatePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, getPollById, createPoll, updatePoll, deletePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -100,7 +101,14 @@ router
     .put(sync(async (req, res) => { // Update poll
         notImplemented(res);
     }))
-    .delete(sync(async (req, res) => { // Delete poll
+    .delete(validate([], {pollId: requireId}), sync(async (req, res) => { // Delete poll
+        //I'm assuming pollId is the req.body parameter for the id of the poll. pls change the name to the actual parameter name
+        const user = getUserById(req.session.userId);
+        const poll = getPollById(pollId);
+
+        if (!(poll.author === user._id || user.is_admin)){throw statusError(403, 'You do not have permission to delete this poll');}
+        const stat = await deletePoll(pollId, req.session.userId);
+        if (stat.status === "success"){res.json({redirect: `/polls`});}
         notImplemented(res);
     }));
 
