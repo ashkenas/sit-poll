@@ -1,6 +1,11 @@
 <div class="section">
     <div class="container is-max-desktop">
         <h1 class="title is-1">Results</h1>
+        {{#if session.manager}}
+            <div class="buttons">
+                <a class="button is-info" href="/polls/{{poll._id}}/metrics">Metrics</a>
+            </div>
+        {{/if}}
         <h2 class="title">{{poll.title}}</h1>
         <p class="subtitle">By <span>{{author}}</span></p>
         <div id="votes" style="margin-bottom:1rem;"></div>
