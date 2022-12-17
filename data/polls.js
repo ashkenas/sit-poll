@@ -84,6 +84,31 @@ const createPoll = async (title, choices, authorID, public_bool, close_date, ros
     return retval;
 }
 
+const deletePoll = async(poll_id, user_id) =>{
+    const userCol = await users();
+    const pollCol = await polls();
+
+    poll_id = requireId(poll_id);
+    user_id = requireId(user_id);
+
+    user = getUserById(user_id);
+    poll = getPollById(poll_id);
+
+    if(poll.author.equals(user_id) || user.is_admin){
+        const deletePollInfo = await pollCol.deleteOne({"_id": poll_id});
+        if(deletePollInfo.deletedCount === 0){throw statusError(503, 'Poll delete failed');}
+        const removePollFromRosterInfo = await userCol.updateOne({"_id": user_id}, {$pull: {"rosters.polls": poll_id}});
+        if(removePollFromRosterInfo.modifiedCount === 0) {
+            await pollCol.insertOne(poll);
+            throw statusError(503, 'Poll delete failed');
+        }
+
+    }else {
+        throw statusError(403, 'You do not have permission to delete this poll');
+    }
+
+}
+
 
 
 /**
