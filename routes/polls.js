@@ -35,7 +35,7 @@ router
         .route('/create')
         .get(sync(async (req, res) => { // load pollCreate page with rosters if user has authorization to create polls
             var user = await getUserById(req.session.userId);
-            if (user.is_manager)
+            if (user.is_manager || user.is_admin)
             {
                 var rosters = [];
                 for (let roster of user.rosters){
