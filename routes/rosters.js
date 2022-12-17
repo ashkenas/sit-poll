@@ -120,10 +120,7 @@ router
           message: e.message
         })
       }
-      const user = await getUserById(req.session.userId);
-      return res.render('rosters/displayRosters', {
-        rosters: user.rosters
-      });
+      return res.redirect('/rosters');
     }));
 
 router
@@ -172,10 +169,7 @@ router
           message: e.message
         })
       }
-      const user = await getUserById(req.session.userId);
-      return res.render('rosters/displayRosters', {
-        rosters: user.rosters
-      });
+      return res.redirect('/rosters');
     }));
 
 router
@@ -224,10 +218,7 @@ router
           message: e.message
         })
       }
-      const user = await getUserById(req.session.userId);
-      return res.render('rosters/displayRosters', {
-        rosters: user.rosters
-      });
+      return res.redirect('/rosters');
     }));
 
 router
@@ -259,11 +250,7 @@ router
           message: "Unauthorized to access this page"
         });
       }
-
-      const user = await getUserById(req.session.userId);
-      return res.render('rosters/displayRosters', {
-        rosters: user.rosters
-      });
+      return res.redirect('/rosters');
     }));
 
 module.exports = router;

@@ -20,7 +20,6 @@ router
     .route('/')
     .get(sync(async (req, res) => { // View rosters
       if(await checkAuthorized(req.session.userId)) {
-        console.log(await getManagers());
         return res.render('admin/displayAuthorizations', {
           managers: await getManagers(),
           admins: await getAdmins()
@@ -95,7 +94,6 @@ router
     .get(sync(async (req, res) => { // Render form to create a roster
       req.params.auth = requireString(req.params.auth);
       req.params.userEmail = requireEmail(req.params.userEmail);
-      console.log(req.params.auth, req.params.userEmail)
       if(!(await checkAuthorized(req.session.userId))) {
         return res.status(401).render('error', {
           status: 401,
@@ -138,14 +136,11 @@ router
         }
         const update = await removeAuth(user._id, auth);
       } catch (e) {
-        console.log("inhere")
         return res.status(e.status).render('error', {
           status: e.status,
           message: e.message
         })
       }
-      console.log("here")
-      //const user = await getUserById(req.session.userId);
       return res.redirect('/admin');
     }));
 
