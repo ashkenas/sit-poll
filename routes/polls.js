@@ -155,9 +155,19 @@ router
         poll_id = requireId(poll_id, 'poll_id');
         const close_date = req.body.availDate;
         close_date = requireDate(close_date, 'close_date');
+       
+        if (close_date < Date.now())
+            throw statusError(400, 'Close date must be after current date.');
+
+        if (choices.length < 2)
+            throw statusError(400, 'Poll must have at least 2 options.');
+        
+        if (title.length < 5)
+            throw statusError(400, 'Title must be at least 5 characters long');
+
         const stat = await updatePoll(poll_id, title, choices, close_date);
         //check if update is successful
-        if (stat.status === "success") {res.redirect(`/polls/${stat.poll_Id}/results`);}
+        if (stat.status === "success") {res.json({redirect: `/polls/${stat.poll_Id}/results`});}
 
 
     }));

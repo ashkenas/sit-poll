@@ -7,9 +7,18 @@ const { getUserById } = require("./users");
 const updatePoll = async (poll_id, title, choices, close_date) =>{
     
     poll_id = requireId(poll_id, "poll_id");
+    const poll = await getPollById(poll_id);
+    if(!poll)
+        throw 'Poll does not exist';
     title = requireString(title, 'title');
+    if (title.length < 5)
+        throw 'Title must be at least 5 characters long.';
     choices = requireOptions(choices, 'choices');
+    if (choices.length < 2)
+        throw 'Must provide at least 2 choices';
     close_date = requireDate(close_date, 'poll close date');
+    if (close_date < Date.now())
+        throw 'Poll must close after current date.';
 
     let closed = new Date(close_date);
 
@@ -23,7 +32,7 @@ const updatePoll = async (poll_id, title, choices, close_date) =>{
             "close_date": closed
              }})
     
-    if (updateInfo.modifiedCount === 0) {throw statusError(503, "Poll edit failed");}
+    if (!updateInfo.acknowledged || !updateInfo.modifiedCount) {throw "Poll edit failed";}
 
     retval = {
         status: "success",
