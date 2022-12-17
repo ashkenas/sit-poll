@@ -10,7 +10,7 @@ router
     .get(sync(async (req, res) => { // Display login form
         res.render('login')
     }))
-    .post(validate(['email', 'password']), sync(async (req, res) => { // Validate credentials (TODO: Not present?), setup session
+    .post(validate(['email', 'password']), sync(async (req, res) => { // Validate credentials, setup session
         const {email, password} = req.body
         const user = await getUserByEmail(email.toLowerCase());
         if(user === null)

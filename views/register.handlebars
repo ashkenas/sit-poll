@@ -1,11 +1,124 @@
-<form action="/register" method="POST" id="registration-form">
-    <label for="email">Stevens.edu Email:</label>
-    <input type="text" id="email" name="email" placeholder="email">
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" placeholder="password">
-    <button type="submit">Register</button>
-</form>
-{{#if error}}
-    <p class="help is-danger">Error {{error}}: {{message}}</p>
-{{/if}}
+<article>
+    <h1>Register</h1>
+    <form action="/register" method="POST" id="registration-form">
+        <div>
+            <label for="email">Stevens.edu Email:</label>
+            <input type="text" id="email" name="email" placeholder="email">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" placeholder="password">
+        </div>
+        <div>
+            <label for="name">Display Name:</label>
+            <input type="text" id="name" name="name" placeholder="display name">
+        </div>
+        <div>
+            <label for="major">Major:</label>
+            <input type="text" id="major" name="major" placeholder="major">
+        </div>
+        <div>
+            <label for="school">School:</label>
+            <select id="school" name="school">
+                <option>Schaefer School of Engineering and Science</option>
+                <option>School of Business</option>
+                <option>School of Systems and Enterprises</option>
+                <option>College of Arts and Letters</option>
+            </select>
+        </div>
+        <div>
+            <label for="gender">Gender:</label>
+            <select id="gender" name="gender">
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+                <option value="T">Transgender</option>
+                <option value="NB">Non-binary</option>
+                <option value="GN">Gender Neutral</option>
+                <option value="O">Other</option>
+                <option value="P">Prefer not to say</option>
+            </select>
+        </div>
+        <div>
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" value="2022-12-18">
+        </div>
+        <div>
+            <label for="year">Class Year:</label>
+            <select id="year" name="year">
+                <option>2022</option>
+                <option>2023</option>
+                <option>2024</option>
+                <option>2025</option>
+                <option>2026</option>
+            </select>
+        </div>
+        <button type="submit">Register</button>
+    </form>
+    <p id="register-error" class="help is-danger error"></p>
     <a href="/login">Already have an account? Click here to log-in</a>
+</article>
+<script>
+    const showRegisterError = errorManager('register-error');
+
+    handleForm('registration-form', 'POST', '/register', async (formData) => {
+        const email = formData.get('email')
+        const password = formData.get('password')
+        const name = formData.get('name')
+        const major = formData.get('major')
+        const school = formData.get('school')
+        const gender = formData.get('gender')
+        const dob = formData.get('dob')
+        const year = formData.get('year')
+
+        if(email === "")
+            return showRegisterError('An email must be provided')
+        if(!email.match(/^[a-z]+\d*@stevens\.edu$/i) || email.substring(0, email.indexOf('@')).length > 8)
+            return showRegisterError('Invalid Stevens email address')
+        
+        if(password === "")
+            return showRegisterError('A password must be provided')
+        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g)
+         || !password.match(/[\.,'";:\?!@#\$%\^&\*-\+]/g) || password.match(/\s/g))
+            return showRegisterError("Password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character")
+
+         if(name === "")
+            return showRegisterError("A name must be provided")
+         if(!/^[a-zA-Z\-]{3,} [a-zA-Z\-,\.']{3,}$/.test(name) || /[\-']{2,}/g.test(name)) 
+            return showRegisterError("Invalid name")
+
+         const majors = ["biomedical engineering", "chemical engineering", "civil engineering", "computer engineering", "electrical engineering",
+            "engineering - naval engineering concentration", "engineering - optical engineering concentration", "mechanical engineering", "biology",
+            "chemistry", "chemical biology", "pure and applied mathematics", "physics", "computer science", "cybersecurity", "accounting and analytics",
+            "business and technology", "economics", "finance", "information systems", "management", "marketing innovation and analytics", 
+            "quantitative finance", "engineering management", "industrial and systems engineering", "software engineering", "music and technology", 
+            "visual arts and technology", "science, technology, and society", "quantitative social science", "science communication", "literature",
+            "philosophy", "engineering undecided", "humanities undecided"]
+         if(majors.indexOf(major.toLowerCase()) === -1)
+            return showRegisterError("Invalid major. Give the full name if you haven't done so.")
+
+        if(school === "")
+            return showRegisterError("A school must be provided")
+
+        if(gender === "")
+            return showRegisterError("A gender must be provided")
+
+        if(dob === "")
+            return showRegisterError("A date of birth must be provided")
+        if((new Date(dob)).getTime() > (new Date).getTime())
+            return showRegisterError("Invalid date of birth")
+
+        if(year === "" || parseInt(year) === NaN)
+            return showRegisterError("A year must be provided")     
+
+        showRegisterError(); // Hides error info if no error
+
+        return {email: email,
+                password: password,
+                display_name: name,
+                major: major,
+                school: school,
+                gender: gender,
+                date_of_birth: new Date(dob),
+                class_year: parseInt(year)};
+    });
+</script>
