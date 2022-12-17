@@ -5,7 +5,7 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, createPoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -16,10 +16,53 @@ router
     .route('/')
     .get(sync(async (req, res) => { // View polls
         // Update this with an actual page
-        res.json(await getAllPollsInfo(req.session.userId));
+        var polls = await getAllPollsInfo(req.session.userId);
+        
+        for (var poll of polls){
+            var author = await getUserById(poll.author);
+            var author_display = author.display_name;
+            poll.author = author_display;
+            console.log(author_display)
+        }
+        console.log(polls);
+
+        res.render("polls/viewPolls", {polls: polls});
+
+        //res.json(await getAllPollsInfo(req.session.userId));
     }))
-    .post(sync(async (req, res) => { // Create poll
+    .post(sync(async (req, res) => { // view specific poll
         notImplemented(res);
+    }));
+
+    router
+        .route('/create')
+        .get(sync(async (req, res) => { // load pollCreate page with rosters if user has authorization to create polls
+            var user = await getUserById(req.session.userId);
+            if (user.is_manager)
+            {
+                var rosters = [];
+                for (let roster of user.rosters){
+                    rosters.push(roster);
+                }
+                
+                //this handles taking current date and changing it to format to fit datetime-local min in pollCreate
+                // work this out later
+
+                res.render('polls/pollCreate', {
+                    rosters: rosters});
+            } else {
+                throw statusError(403, 'Not authorized to create poll.')
+            }
+        }))
+        .post(sync(async (req, res) => { // Create poll
+            let title = req.body.pollTitle;
+            let choices = req.body.option;
+            let authorID = req.session.userId;
+            let public_bool = false; //fix this later
+            let close_date = req.body.availDate;
+            let rosterId = req.body.roster;
+            let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
+            if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
     }));
 
 router
@@ -60,6 +103,7 @@ router
 router
     .route('/:id/edit')
     .get(sync(async (req, res) => { // Edit page for poll
+
         notImplemented(res);
     }));
 
