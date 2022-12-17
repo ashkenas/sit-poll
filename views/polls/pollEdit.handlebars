@@ -1,7 +1,7 @@
 <div class="section">
-    <P>This is the poll create page</P>
+    <h1>Edit Poll</h1>
 
-    <form id = "pollCreateForm" method="post">
+    <form id = "pollEditForm" method="post">
         <input type="hidden" id="pollId" name="pollId" value="{{id}}">
 
         <label for="avail-date">Poll available until:</label>
@@ -11,20 +11,20 @@
         <input type="text" id="pollTitle" name="pollTitle" value="{{title}}"><br><br>
 
         <!--Handlebars this-->
-        <label for="option1">Choice 1</label> 
-        <input type="text" id="option1" name="option" placeholder="Choice 1"><br>
-        <label for="option2">Choice 2</label>
-        <input type="text" id="option2" name="option" placeholder="Choice 2"><br>
+        {{#each choices}}
+        <label for="option{{number}}" id="label{{number}}">Choice {{number}}:</label> 
+        <input type="text" id="option{{number}}" name="option" value="{{choice}}"><br id="br{{number}}">
+        {{/each}}
         
     </form>
     <button onclick="createOption()">Add Option</button>
     <button onclick="removeOption()">Remove Option</button><br>
-    <button type="submit" form="pollCreateForm">Submit</button>
+    <button type="submit" form="pollEditForm">Submit</button>
 
         <script>
             
-            var form = document.getElementById("pollCreateForm");
-            var optionCounter = 3; //dont forget to use given optionCounter
+            var form = document.getElementById("pollEditForm");
+            var optionCounter = {{opCounter}}; //dont forget to use given optionCounter
              
             function createOption(){
                 var name = "option" + optionCounter;
@@ -37,7 +37,7 @@
                 var label = document.createElement("label");
                 label.setAttribute("for",name);
                 label.setAttribute("id","label"+optionCounter);
-                label.innerText="Choice "+optionCounter+":";
+                label.innerText="Choice "+optionCounter+": ";
 
                 var br = document.createElement("br");
                 br.setAttribute("id", "br"+optionCounter);
@@ -54,6 +54,7 @@
                     var label = document.getElementById("label"+optionCounter);
                     var br = document.getElementById("br"+optionCounter);
                     var option = document.getElementById("option"+optionCounter);
+                    console.log(optionCounter);
 
                     label.remove();
                     br.remove();

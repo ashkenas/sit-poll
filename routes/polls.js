@@ -5,12 +5,12 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, getPollById, createPoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, getPollById, createPoll, updatePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
 // Automatically 404/3s for all poll-specific routes if necessary
-router.use('/:id', requirePoll('id'))
+
 
 router
     .route('/')
@@ -24,7 +24,7 @@ router
             poll.author = author_display;
             console.log(author_display)
         }
-        console.log(polls);
+        //console.log(polls);
 
         res.render("polls/viewPolls", {polls: polls});
 
@@ -64,6 +64,9 @@ router
             let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
             if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
     }));
+
+
+router.use('/:id', requirePoll('id'));
 
 router
     .route('/:id')
@@ -108,31 +111,50 @@ router
         //console.log(poll.author);
         const user_id = requireId(req.session.userId, "id");
         const poll_author = requireId(poll.author, "poll author");
-        console.log(user_id);
-        console.log(poll_author);
+        //console.log(user_id);
+        //console.log(poll_author);
         if (!user_id.equals(poll_author)){throw statusError(403, "You may not edit a poll you did not create");}
         //console.log(poll.votes.length);
         if (poll.votes.length > 0){throw statusError(403, 'You may not edit the poll after the first vote is cast');}
         //console.log(poll);
+
+        var choices = poll.choices;
+        var poll_choices = [];
+        var counter = 1;
+        for (var choice of choices){
+            poll_choices.push({
+                number: counter,
+                choice: choice
+            })
+            counter+=1;
+        }
+        console.log(poll_choices);
         const poll_id = poll._id;
         const poll_title = poll.title;
-        const poll_choices = poll.choices;
+        //const poll_choices = poll.choices;
         const poll_close_date = poll.close_date;
-        const poll_posted_date = poll.posted_date;
+        //const poll_posted_date = poll.posted_date;
+        const poll_opCounter = counter;
         //add optionCounter as passed variable. optionCounter = #options +1
         res.render("polls/pollEdit", {
             id: poll_id,
             title: poll_title,
             choices: poll_choices,
             close_date: poll_close_date,
-            posted_date: poll_posted_date
+            opCounter: poll_opCounter
         })
 
-
-        notImplemented(res);
     }))
     .post(sync(async (req, res) => { //update poll
-       notImplemented(res); 
+        const title = req.body.pollTitle;
+        const choices = req.body.option;
+        const poll_id = req.body.pollId;
+        const close_date = req.body.availDate;
+        const stat = await updatePoll(poll_id, title, choices, close_date);
+        //check if update is successful
+        if (stat.status === "success") {res.redirect(`/polls/${stat.poll_Id}/results`);}
+
+
     }));
 
 router

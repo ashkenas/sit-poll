@@ -4,6 +4,34 @@ const { stringifyId, statusError, sync } = require("../helpers");
 const { requireId, requireInteger, requireOptions, requireDate, requireBoolean, requireString, validReactions } = require("../validation");
 const { getUserById } = require("./users");
 
+const updatePoll = async (poll_id, title, choices, close_date) =>{
+    
+    poll_id = requireId(poll_id, "poll_id");
+    title = requireString(title, 'title');
+    choices = requireOptions(choices, 'choices');
+    close_date = requireDate(close_date, 'poll close date');
+
+    let closed = new Date(close_date);
+
+    const pollCol = await polls();
+
+    const updateInfo = await pollCol.updateOne(
+        {"_id": poll_id},
+        {$set: {
+            "title": title,
+            "choices": choices,
+            "close_date": closed
+             }})
+    
+    if (updateInfo.modifiedCount === 0) {throw statusError(503, "Poll edit failed");}
+
+    retval = {
+        status: "success",
+        poll_Id: poll_id
+    }
+    return retval;
+
+}
 
 
 const createPoll = async (title, choices, authorID, public_bool, close_date, rosterId) =>{
@@ -583,6 +611,7 @@ const deleteComment = async (commentId) => {
 };
 
 module.exports = {
+    updatePoll,
     createPoll,
     addComment,
     deleteComment,
