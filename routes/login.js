@@ -24,7 +24,7 @@ router
                 req.session.manager = user.is_manager;
                 req.session.admin = user.is_admin;
                 // Redirect to original destination
-                return res.redirect(req.session.redirect || '/');
+                return res.json({redirect: req.session.redirect || '/'});
             }
             else {
                 throw statusError(500, "Internal server error.")

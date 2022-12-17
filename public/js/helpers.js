@@ -23,7 +23,7 @@ const handleForm = (formId, method, action, handler) => {
     const form = document.getElementById(formId);
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const data = handler(new FormData(form));
+        const data = await handler(new FormData(form));
         if (!data) return;
         const response = await fetch(action, {
             body: JSON.stringify(data),
