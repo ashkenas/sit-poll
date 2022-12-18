@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireId, validate, validReactions } = require('../validation');
+const { requireId, validate, validReactions, validSchools } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
@@ -15,10 +15,16 @@ router
     .get(sync(async (req, res) => { // View polls
         const polls = await getAllPollsInfo(req.session.userId);
         
-        for (const poll of polls)
-            poll.author = (await getUserById(poll.author)).display_name;
+        for (const poll of polls) {
+            const user = await getUserById(poll.author);
+            poll.author = user.display_name;
+            poll.school = user.school;
+        }
 
-        res.render("polls/viewPolls", { polls: polls });
+        res.render("polls/viewPolls", {
+            polls: polls,
+            schools: validSchools
+        });
     }))
     .post(validate(
         ['title', 'choices', 'close_date'],
