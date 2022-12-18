@@ -1,11 +1,134 @@
-<form action="/register" method="POST" id="registration-form">
-    <label for="email">Stevens.edu Email:</label>
-    <input type="text" id="email" name="email" placeholder="email">
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" placeholder="password">
-    <button type="submit">Register</button>
-</form>
-{{#if error}}
-    <p class="help is-danger">Error {{error}}: {{message}}</p>
-{{/if}}
-    <a href="/login">Already have an account? Click here to log-in</a>
+<section class="section">
+    <div class="container is-max-dekstop">
+        <h1 class="title">Register</h1>
+        <form id="register-form" method="post">
+            <div class="field">
+                <label for="email" class="label">Email</label>
+                <div class="control">
+                    <div class="field has-addons">
+                        <div class="control is-expanded">
+                            <input class="input" type="text" id="email" name="email" placeholder="Email without @stevens.edu">
+                        </div>
+                        <div class="control">
+                            <button class="button" type="button" disabled>@stevens.edu</button>
+                        </div>
+                    </div>
+                </div>
+                <p id="email-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <label for="password" class="label">Password</label>
+                <div class="control">
+                    <input class="input" type="password" id="password" name="password">
+                </div>
+                <p id="pass-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <label for="display_name" class="label">Display Name</label>
+                <div class="control">
+                    <input class="input" type="text" id="display_name" name="display_name">
+                </div>
+                <p id="name-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <label class="label" for="date_of_birth">Date of Birth</label>
+                <div class="control">
+                    <input class="input" type="date" id="date_of_birth" name="date_of_birth"></select>
+                </div>
+                <p id="date-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <label class="label" for="year">Class Year</label>
+                <div class="control">
+                    <select class="select" id="year" name="class_year"></select>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="gender">Gender</label>
+                <div class="control">
+                    <select class="select" id="gender" name="gender">
+                        {{#each genders}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="major">Major</label>
+                <div class="control">
+                    <select class="select" id="major" name="major">
+                        {{#each majors}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="school">School/College</label>
+                <div class="control">
+                    <select class="select" id="school" name="school">
+                        {{#each schools}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Register">
+                <a href="/login" class="button is-primary">I have an account</a>
+            </div>
+        </form>
+    </div>
+</section>
+<script>
+    const showEmailError = errorManager('email-error');
+    const showPassError = errorManager('pass-error');
+    const showNameError = errorManager('name-error');
+    const showDateError = errorManager('date-error');
+    const yearSelect = document.getElementById('year');
+    
+    const thisYear = (new Date()).getFullYear();
+    for (let i = thisYear; i < thisYear + 8; i++) {
+        const option = document.createElement('OPTION');
+        option.value = i;
+        option.innerText = i;
+        yearSelect.append(option);
+    }
+
+    handleForm('register-form', 'POST', '/register', (formData) => {
+        const email = formData.get('email');
+        const password = formData.get('password');
+        if(email === "")
+            return showEmailError('An email must be provided.');
+        if(!email.match(/^[a-z]{3,}[0-9]*$/))
+            return showEmailError("Invalid Stevens email address.");
+        showEmailError();   
+        if(password === "")
+            return showPassError('A password must be provided.');
+        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
+            return showPassError('Password must be at least six characters and contain an uppercase letter, a digit, and a special character.');
+        showPassError();
+
+        const display_name = formData.get('display_name');
+        if(display_name.length < 2)
+            return showNameError('Display name must be at least 2 characters long.');
+        if(display_name.match(/[^a-z.'\-]/i))
+            return showNameError('Display name can only contain letters, periods, and apostrophes.');
+        showNameError();
+
+        const date_of_birth = new Date(formData.get('date_of_birth'));
+        if (isNaN(date_of_birth))
+            return showDateError('Invalid date.');
+        if (date_of_birth > new Date())
+            return showDateError('Cannot be born in the future.');
+        if ((new Date() - date_of_birth) < 1000*60*60*24*365*17)
+            return showDateError('Must be at least 17 years old.');
+        showDateError();
+
+        console.log(formData.get('major'));
+        return {
+            email: email,
+            password: password,
+            display_name: display_name,
+            class_year: formData.get('class_year'),
+            major: formData.get('major'),
+            school: formData.get('school'),
+            gender: formData.get('gender'),
+            date_of_birth: date_of_birth.getTime()
+        };
+    });
+</script>

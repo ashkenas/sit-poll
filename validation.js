@@ -142,6 +142,59 @@ const validReactions = {
     dislike: '👎'
 };
 
+const validMajors = [
+    'N/A',
+    'Accounting and Analytics',
+    'Biology',
+    'Biomedical Engineering',
+    'Business and Technology',
+    'Chemical Biology',
+    'Chemical Engineering',
+    'Chemistry',
+    'Civil Engineering',
+    'Computer Engineering',
+    'Computer Science',
+    'Cybersecurity',
+    'Economics',
+    'Electrical Engineering',
+    'Engineering - Naval Engineering Concentration',
+    'Engineering - Optical Engineering Concentration',
+    'Engineering Management',
+    'Engineering Undecided',
+    'Finance',
+    'Humanities Undecided',
+    'Industrial and Systems Engineering',
+    'Information Systems',
+    'Literature',
+    'Management',
+    'Marketing Innovation and Analytics',
+    'Mechanical Engineering',
+    'Music and Technology',
+    'Philosophy',
+    'Physics',
+    'Pure and Applied Mathematics',
+    'Quantitative Finance',
+    'Quantitative Social Science',
+    'Science Communication',
+    'Science, Technology, and Society',
+    'Software Engineering',
+    'Visual Arts and Technology'
+];
+
+const validSchools = [
+    'Schaefer School of Engineering and Science',
+    'School of Business',
+    'School of Systems and Enterprises',
+    'College of Arts and Letters'
+];
+
+const validGenders = [
+    'Prefer not to say',
+    'Male',
+    'Female',
+    'Non-binary'
+];
+
 module.exports = {
     requireBoolean,
     requireDate,
@@ -151,5 +204,8 @@ module.exports = {
     requireOptions,
     requireString,
     validate,
-    validReactions
+    validGenders,
+    validMajors,
+    validReactions,
+    validSchools
 };

@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/ashkenas/sit-poll#readme",
   "dependencies": {
-    "bcrypt": "^5.1.0",
+    "bcryptjs": "^2.4.3",
     "bulma": "^0.9.4",
     "express": "^4.18.2",
     "express-handlebars": "^6.0.6",

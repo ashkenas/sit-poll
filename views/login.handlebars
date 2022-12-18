@@ -1,29 +1,49 @@
-<article>
-    <h1>Log In</h1>
-
-    <form id="login-form" method="post">
-        <label for="email">Stevens.edu Email:</label>
-        <input type="text" id="email" name="email" placeholder="email">
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" placeholder="password">
-        <input type="submit" value = "Log In">
-    </form>
-    <p id="login-error" class="help is-danger error"></p>
-    <a href="/register">Click here to register!</a>
-</article>
+<section class="section">
+    <div class="container is-max-dekstop">
+        <h1 class="title">Log In</h1>
+        <form id="login-form" method="post">
+            <div class="field">
+                <label for="email" class="label">Email</label>
+                <div class="control">
+                    <div class="field has-addons">
+                        <div class="control is-expanded">
+                            <input class="input" type="text" id="email" name="email" placeholder="Email without @stevens.edu">
+                        </div>
+                        <div class="control">
+                            <button class="button" type="button" disabled>@stevens.edu</button>
+                        </div>
+                    </div>
+                </div>
+                <p id="email-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <label for="password" class="label">Password</label>
+                <div class="control">
+                    <input class="input" type="password" id="password" name="password">
+                </div>
+                <p id="pass-error" class="help is-danger error"></p>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Log In">
+                <a href="/register" class="button is-primary">Register</a>
+            </div>
+        </form>
+    </div>
+</section>
 <script>
-    const showLoginError = errorManager('login-error');
+    const showEmailError = errorManager('email-error');
+    const showPassError = errorManager('pass-error');
 
-    handleForm('login-form', 'POST', '/login', async (formData) => {
-        const email = formData.get('email')
-        const password = formData.get('password')
+    handleForm('login-form', 'POST', '/login', (formData) => {
+        const email = formData.get('email');
+        const password = formData.get('password');
         if(email === "")
-            return showLoginError('An email must be provided')
+            return showEmailError('An email must be provided.');
+        showEmailError();
         if(password === "")
-            return showLoginError('A password must be provided')
+            return showPassError('A password must be provided.');
+        showPassError();
 
-        showLoginError(); // Hides error info if no error
-
-        return {email: email, password: password};
+        return { email: email, password: password };
     });
 </script>

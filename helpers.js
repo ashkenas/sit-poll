@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 module.exports = {
     statusError(status, message) {
@@ -15,6 +15,6 @@ module.exports = {
         return (req, res, next) => func(req, res, next).catch(next);
     },
     async hashPassword (password) {
-        return await bcrypt.hash(password, 4)
+        return await bcrypt.hash(password, 4);
     }
 };
