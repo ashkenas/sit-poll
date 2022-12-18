@@ -1,68 +1,114 @@
 <div class="section">
-    <h1>Edit Poll</h1>
-
-    <form id = "pollEditForm" method="post">
-        <input type="hidden" id="pollId" name="pollId" value="{{id}}">
-
-        <label for="avail-date">Poll available until:</label>
-        <input type="datetime-local" id="availDate" name="availDate"> <br><br> <!--value="{{dateTimeLocalValue}}" min="{{dateTimeLocalValue}}"-->
-
-        <label for="pollTitle">Poll Title:</label>
-        <input type="text" id="pollTitle" name="pollTitle" value="{{title}}"><br><br>
-
-        <!--Handlebars this-->
-        {{#each choices}}
-        <label for="option{{number}}" id="label{{number}}">Choice {{number}}:</label> 
-        <input type="text" id="option{{number}}" name="option" value="{{choice}}"><br id="br{{number}}">
-        {{/each}}
-        
-    </form>
-    <button onclick="createOption()">Add Option</button>
-    <button onclick="removeOption()">Remove Option</button><br>
-    <button type="submit" form="pollEditForm">Submit</button>
-
-        <script>
-            
-            var form = document.getElementById("pollEditForm");
-            var optionCounter = {{opCounter}}; //dont forget to use given optionCounter
-             
-            function createOption(){
-                var name = "option" + optionCounter;
-                var option = document.createElement("input");
-                option.setAttribute("type","text");
-                option.setAttribute("id",name);
-                option.setAttribute("name","option");
-                option.setAttribute("placeholder","Choice "+optionCounter);
-
-                var label = document.createElement("label");
-                label.setAttribute("for",name);
-                label.setAttribute("id","label"+optionCounter);
-                label.innerText="Choice "+optionCounter+": ";
-
-                var br = document.createElement("br");
-                br.setAttribute("id", "br"+optionCounter);
-
-                form.appendChild(label);
-                form.appendChild(option);
-                form.appendChild(br);
-                optionCounter+=1;
-            }
-
-            function removeOption(){
-                if(optionCounter>3){
-                    optionCounter-=1;
-                    var label = document.getElementById("label"+optionCounter);
-                    var br = document.getElementById("br"+optionCounter);
-                    var option = document.getElementById("option"+optionCounter);
-                    console.log(optionCounter);
-
-                    label.remove();
-                    br.remove();
-                    option.remove();
-                }else {
-                    //do nothing
-                }
-            }
-
-        </script>
+    <div class="container is-max-desktop">
+        <h1 class="title">Edit Poll</h1>
+        <form id="poll-form">
+            <div class="field">
+                <label for="close_date" class="label">Poll Close Date</label>
+                <div class="control">
+                    <input class="input" type="datetime-local" id="close_date" name="close_date">
+                </div>
+                <p id="date-error" class="help error is-danger"></p>
+            </div>
+            <div class="field">
+                <label for="title" class="label">Title</label>
+                <div class="control">
+                    <input class="input" type="text" id="title" name="title" placeholder="Title" value="{{poll.title}}">
+                </div>
+                <p id="title-error" class="help error is-danger"></p>
+            </div>
+            {{#each poll.choices}}
+                <div class="field">
+                    <label for="option{{addOne @index}}" class="label">Choice {{addOne @index}}</label>
+                    <div class="control is-expanded">
+                        <input class="input" type="text" id="option{{addOne @index}}" name="choices" placeholder="Choice {{addOne @index}}" value="{{this}}">
+                    </div>
+                    <p id="option-error-{{addOne @index}}" class="help error is-danger"></p>
+                </div>
+            {{/each}}
+            <div class="buttons">
+                <button class="button" id="add-option" type="button">Add Option</button>
+                <button class="button is-danger has-text-black" id="remove-option" type="button" style="display: none;">Remove Last Option</button>
+                <input class="button is-link" type="submit">
+            </div>
+        </form>
+    </div>
 </div>
+<template id="option-template">
+    <div class="field">
+        <label for="option3" class="label">Choice 3</label>
+        <div class="control is-expanded">
+            <input class="input" type="text" id="option3" name="choices" placeholder="Choice 3">
+        </div>
+        <p id="option-error-3" class="help error is-danger"></p>
+    </div>
+</template>
+<script>
+let options = {{poll.choices.length}};
+const optionTemplate = document.getElementById('option-template').content.firstElementChild;
+const buttons = document.querySelector('.buttons');
+const removeButton = document.getElementById('remove-option');
+const errorManagers = {
+    option1: errorManager('option-error-1'),
+    option2: errorManager('option-error-2')
+};
+
+if (options > 2)
+    removeButton.style.display = 'block';
+
+const dateString = new Date({{poll.close_date}}).toISOString().split('.')[0];
+document.getElementById('close_date').value = dateString.substring(0, dateString.length - 3);
+
+document.getElementById('add-option').addEventListener('click', (event) => {
+    const temp = optionTemplate.cloneNode(true);
+    const label = temp.querySelector('label');
+    label.for = `option${++options}`;
+    label.innerText = `Choice ${options}`;
+    const input = temp.querySelector('input');
+    input.id = `option${options}`;
+    input.placeholder = `Choice ${options}`;
+    temp.querySelector('p').id = `option-error-${options}`;
+    buttons.before(temp);
+    removeButton.style.display = 'block';
+    errorManagers[`option${options}`] = errorManager(`option-error-${options}`);
+});
+
+removeButton.addEventListener('click', (event) => {
+    const fields = document.querySelectorAll('.field');
+    fields[fields.length - 1].remove();
+    delete errorManagers[`option${options}`];
+    options--;
+    removeButton.style.display = options > 2 ? 'block' : 'none';
+});
+
+const titleManager = errorManager('title-error');
+const dateManager = errorManager('date-error');
+
+handleForm('poll-form', 'PUT', '/polls/{{poll._id}}', (formData) => {
+    const close_date = new Date(formData.get('close_date'));
+    if (isNaN(close_date))
+        return dateManager('Must provide a valid date.');
+    if (close_date < Date.now())
+        return dateManager('Close date must be after current date.');
+    dateManager();
+
+    const title = formData.get('title');
+    if (title.length < 5)
+        return titleManager('Title must be at least 5 characters.');
+    titleManager();
+
+    const optionInputs = document.querySelectorAll('input[id*="option"]');
+    const options = [];
+    for (const input of optionInputs) {
+        if (!input.value)
+            return errorManagers[input.id]('Choice cannot be blank.');
+        errorManagers[input.id]();
+        options.push(input.value);
+    };
+
+    return {
+        title: title,
+        close_date: close_date,
+        choices: options
+    };
+});
+</script>

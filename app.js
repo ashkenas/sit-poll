@@ -70,6 +70,7 @@ app.use(errorMiddleware);
 app.engine('handlebars', exphbs.engine({
     defaultLayout: 'main',
     helpers: {
+        addOne: (a) => a + 1,
         equals: (a, b) => a === b,
         or: (a, b) => a || b,
         date: (d) => {

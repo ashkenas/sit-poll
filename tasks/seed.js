@@ -37,7 +37,7 @@ const dataToUsers = async (dataGroup) => {
             user.major,
             user.school,
             user.gender,
-            new Date(user.date_of_birth),
+            new Date(+user.date_of_birth),
             user.class_year,
             false,
             false
@@ -115,6 +115,8 @@ const populatePoll = (poll, roster, admin = false) => {
 };
 
 const main = async () => {
+    const start = Date.now();
+    process.stdout.write('Creating users... ');
     // Make an admin
     const admin = await User('admin@stevens.edu', 'pass1234', 'Admin', '', '', '', 0, 0, true, false);
     // Load students
@@ -127,8 +129,10 @@ const main = async () => {
     const eng2024 = await dataToUsers(require('../seed_data/eng2024.json'));
     const eng2023 = await dataToUsers(require('../seed_data/eng2023.json'));
     const business = await dataToUsers(require('../seed_data/business.json'));
+    process.stdout.write('done!\n');
 
     // Generate some rosters
+    process.stdout.write('Creating rosters... ');
     const cs115a = Roster('CS 115-A', cs2026.slice(0, 100), []);
     const cs115b = Roster('CS 115-B', cs2026.slice(100, 200), []);
     const cs115c = Roster('CS 115-C', cs2026.slice(200, 300), []);
@@ -146,8 +150,11 @@ const main = async () => {
     const napping = Roster('Napping', [...cs2023, ...eng2023, ...business]);
     const creative = Roster('Creative Writing', [...cs2026, ...cs2025, ...cs2024, ...cs2023, ...eng2026, ...eng2025, ...eng2024, ...eng2023, ...business]);
     const accting = Roster('Accounting for Babies', [...business]);
+    const csClub = Roster('CS Club', [...(cs2023.slice(1)), ...cs2024, ...cs2025, ...cs2026]);
+    process.stdout.write('done!\n');
 
     // Make some professors
+    process.stdout.write('Creating professors... ');
     const p115 = await User('beepboop@stevens.edu', 'Prof1!', 'Prof. Beepboop', 'N/A',
         'Schaefer School of Engineering and Science', 'Male', new Date(1976, 5, 12), 0, false, true);
     p115.rosters = [cs115a, cs115b, cs115c];
@@ -175,8 +182,14 @@ const main = async () => {
     const pAct = await User('quickmaf@stevens.edu', 'Prof1!', 'Prof. QuickMaf', 'N/A',
         'College of Arts and Letters', 'Female', new Date(1981, 8, 3), 0, false, true);
     pAct.rosters = [accting];
+    process.stdout.write('done!\n');
+
+    // Assign roster to club president
+    cs2023[0].rosters = [csClub];
+    cs2023[0].is_manager = true;
 
     // Make some polls
+    process.stdout.write('Creating polls... ');
     const plAdmin = Poll('Do you like rubber ducks?', ['Yes','Obviously','No, I hate this school.','DUCKSDUCKSDUCKS!!!'],
         admin._id, true, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
     populatePoll(plAdmin, creative, true);
@@ -236,8 +249,13 @@ const main = async () => {
     populatePoll(plAcc, accting);
     const plClosed = Poll('How\'s the weather?', ['Fine', 'Less fine'], admin._id, true, Date.now() - 1000*60*60*24*2, Date.now());
     populatePoll(plClosed, creative, true);
+    const plCSClub = Poll('Am I a good club president?', ['Yes', 'Absolutely', 'I love you'], cs2023[0]._id, false,
+        Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(plCSClub, csClub);
+    process.stdout.write('done!\n');
     
     // Database things
+    process.stdout.write('Adding all data to MongoDB... ');
     const db = await dbConnection();
     await db.dropDatabase();
     const usersCol = await collections.users();
@@ -245,6 +263,8 @@ const main = async () => {
     await usersCol.insertMany(users);
     await pollsCol.insertMany(polls);
     closeConnection();
+    process.stdout.write('done!\n');
+    console.log(`Completed seeding in ${(Date.now() - start) / 1000}s`);
 };
 
 main();
