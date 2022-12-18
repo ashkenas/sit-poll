@@ -44,7 +44,7 @@ router
         if((new Date() - date_of_birth) < 1000*60*60*24*365*17)
             throw 'Must be at least 17 years old.'
 
-        const user = await getUserByEmail(email);
+        const user = await getUserByEmail(email.concat("@stevens.edu"));
         if (user)
             throw statusError(400, "An account with that email exists already.");  
 
