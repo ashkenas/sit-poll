@@ -20,6 +20,14 @@
                             Create Poll
                         </a>
                     {{/if}}
+                    {{#if session.userId}}
+                        <a class="navbar-item" href="/change-password">
+                            Change Password
+                        </a>
+                        <a class="navbar-item" href="/logout">
+                            Log Out
+                        </a>
+                    {{/if}}
                 </div>
             </div>
         </nav>

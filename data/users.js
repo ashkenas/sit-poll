@@ -2,6 +2,7 @@ const { users } = require("../config/mongoCollections");
 const { stringifyId, hashPassword } = require("../helpers");
 const { requireString, requireId, requireDate, validGenders, validSchools, validMajors, requireInteger } = require("../validation");
 const bcrypt = require('bcryptjs')
+const { ObjectId } = require('mongodb')
 
 /**
  * Returns a user with the provided ID.
@@ -41,8 +42,8 @@ const createUser = async function (email, password, display_name, major, school,
 
     if(!email.match(/^[a-z]{3,}[0-9]*$/))
         throw "Invalid Stevens email address.";
-    if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
-        throw "Password must be at least six characters and contain an uppercase letter, a digit, and a special character.";
+    if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g) || password.match(/\s/g))
+        throw "Password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.";
     if(display_name.length < 2)
         throw 'Display name must be at least 2 characters long.';
     if(display_name.match(/[^a-z.'\- ]/i))
@@ -100,9 +101,34 @@ const validateUser = async function (email, password) {
     return { authenticatedUser: true };
 };
 
+const changePassword = async function (userId, old_password, password1, password2) {
+    const usersCol = await users();
+    const user = await getUserById(userId)
+    if(!await bcrypt.compare(old_password, user.pass_hash))
+        throw statusError(400, "Incorrect current password.")
+    if(await bcrypt.compare(password1, user.pass_hash))
+        throw statusError(400, "Your new password cannot be the same as your current password.")
+    if(password1.length < 6 || !password1.match(/[A-Z]/g) || !password1.match(/\d/g) || !password1.match(/[!-\/:-@\[-`]/g) || password1.match(/\s/g))
+        throw statusError(400, "New password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.");
+    if(password1 !== password2)
+        throw statusError(400, "Your new passwords must match.")
+
+    const hash = await hashPassword(password1)
+    const updatedInfo =  await usersCol.updateOne(
+        {_id: ObjectId(userId)}, 
+        {$set: {pass_hash: hash}}
+    )
+    if(updatedInfo.modifiedCount === 0) {
+        throw statusError(500, "Could not update password succesfully.")
+    }
+    return {updatedUser: true}
+}
+
+
 module.exports = {
     getUserByEmail,
     getUserById,
     createUser,
-    validateUser
+    validateUser,
+    changePassword
 };

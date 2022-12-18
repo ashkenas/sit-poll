@@ -15,13 +15,13 @@ router
     }))
     .post(validate(
         ['email', 'password', 'display_name', 'class_year', 'major', 'gender', 'school', 'date_of_birth']
-    ), sync(async (req, res) => {
+    ), sync(async (req, res) => { // Validate credentials, setup session
         const email = req.body.email.toLowerCase();
         if(!email.match(/^[a-z]{3,}[0-9]*$/))
             throw statusError(400, "Invalid Stevens email address.");
         const password = req.body.password;
-        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
-            throw statusError(400, "Password must be at least six characters and contain an uppercase letter, a digit, and a special character.");
+        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g) || password.match(/\s/g))
+            throw statusError(400, "Password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.");
         
         const display_name = req.body.display_name;
         if(display_name.length < 2)
@@ -44,7 +44,7 @@ router
         if((new Date() - date_of_birth) < 1000*60*60*24*365*17)
             throw 'Must be at least 17 years old.'
 
-        const user = await getUserByEmail(email);
+        const user = await getUserByEmail(email.concat("@stevens.edu"));
         if (user)
             throw statusError(400, "An account with that email exists already.");  
 
