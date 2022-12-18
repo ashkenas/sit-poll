@@ -1,68 +1,52 @@
 const express = require('express');
-const { validate, validReactions } = require('../validation');
+const { requireId, requireDate, requireString, validate, validReactions, requireOptions } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, createPoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, getPollById, createPoll, updatePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
 // Automatically 404/3s for all poll-specific routes if necessary
-router.use('/:id', requirePoll('id'))
+router.use('/:id', requirePoll('id'));
 
 router
     .route('/')
     .get(sync(async (req, res) => { // View polls
-        // Update this with an actual page
-        var polls = await getAllPollsInfo(req.session.userId);
+        const polls = await getAllPollsInfo(req.session.userId);
         
-        for (var poll of polls){
-            var author = await getUserById(poll.author);
-            var author_display = author.display_name;
-            poll.author = author_display;
-            console.log(author_display)
-        }
-        console.log(polls);
+        for (const poll of polls)
+            poll.author = (await getUserById(poll.author)).display_name;
 
-        res.render("polls/viewPolls", {polls: polls});
-
-        //res.json(await getAllPollsInfo(req.session.userId));
+        res.render("polls/viewPolls", { polls: polls });
     }))
-    .post(sync(async (req, res) => { // view specific poll
-        notImplemented(res);
-    }));
+    .post(validate(
+        ['title', 'choices', 'close_date'],
+        { roster: requireId }
+    ), sync(async (req, res) => { // Create poll
+        const close_date = req.body.close_date.getTime();
+        if (close_date < Date.now())
+            throw statusError(400, 'Close date must be after current date.');
+        if (req.body.choices.length < 2)
+            throw statusError(400, 'Poll must have at least 2 options.');
+        if (req.body.title.length < 5)
+            throw statusError(400, 'Title must be at least 5 characters long');
 
-    router
-        .route('/create')
-        .get(sync(async (req, res) => { // load pollCreate page with rosters if user has authorization to create polls
-            var user = await getUserById(req.session.userId);
-            if (user.is_manager)
-            {
-                var rosters = [];
-                for (let roster of user.rosters){
-                    rosters.push(roster);
-                }
-                
-                //this handles taking current date and changing it to format to fit datetime-local min in pollCreate
-                // work this out later
+        const stat = await createPoll(
+            req.body.title,
+            req.body.choices,
+            req.session.userId,
+            req.session.admin,
+            close_date,
+            req.body.roster
+        );
 
-                res.render('polls/pollCreate', {
-                    rosters: rosters});
-            } else {
-                throw statusError(403, 'Not authorized to create poll.')
-            }
-        }))
-        .post(sync(async (req, res) => { // Create poll
-            let title = req.body.pollTitle;
-            let choices = req.body.option;
-            let authorID = req.session.userId;
-            let public_bool = false; //fix this later
-            let close_date = req.body.availDate;
-            let rosterId = req.body.roster;
-            let stat = await createPoll(title, choices, authorID, public_bool, close_date, rosterId);
-            if (stat.status === "success") (res.redirect(`/polls/${stat.poll_Id}/results`));
+        if (stat.success)
+            res.json({ redirect: `/polls/${stat.pollId}/results` });
+        else    
+            throw statusError(500, 'Failed to create poll.');
     }));
 
 router
@@ -103,8 +87,59 @@ router
 router
     .route('/:id/edit')
     .get(sync(async (req, res) => { // Edit page for poll
+        const poll = await getPollById(req.params.id);
+        //console.log(requireId(req.session.userId, "id"));
+        //console.log(poll.author);
+        const user_id = requireId(req.session.userId, "id");
+        const poll_author = requireId(poll.author, "poll author");
+        //console.log(user_id);
+        //console.log(poll_author);
+        if (!user_id.equals(poll_author)){throw statusError(403, "You may not edit a poll you did not create");}
+        //console.log(poll.votes.length);
+        if (poll.votes.length > 0){throw statusError(403, 'You may not edit the poll after the first vote is cast');}
+        //console.log(poll);
 
-        notImplemented(res);
+        var choices = poll.choices;
+        var poll_choices = [];
+        var counter = 1;
+        for (var choice of choices){
+            poll_choices.push({
+                number: counter,
+                choice: choice
+            })
+            counter+=1;
+        }
+        console.log(poll_choices);
+        const poll_id = poll._id;
+        const poll_title = poll.title;
+        //const poll_choices = poll.choices;
+        const poll_close_date = poll.close_date;
+        //const poll_posted_date = poll.posted_date;
+        const poll_opCounter = counter;
+        //add optionCounter as passed variable. optionCounter = #options
+        res.render("polls/pollEdit", {
+            id: poll_id,
+            title: poll_title,
+            choices: poll_choices,
+            close_date: poll_close_date,
+            opCounter: poll_opCounter
+        })
+
+    }))
+    .post(sync(async (req, res) => { //update poll
+        const title = req.body.pollTitle;
+        title = requireString(title, 'title');
+        const choices = req.body.option;
+        choices = requireOptions(choices, 'choices');
+        const poll_id = req.body.pollId;
+        poll_id = requireId(poll_id, 'poll_id');
+        const close_date = req.body.availDate;
+        close_date = requireDate(close_date, 'close_date');
+        const stat = await updatePoll(poll_id, title, choices, close_date);
+        //check if update is successful
+        if (stat.status === "success") {res.redirect(`/polls/${stat.poll_Id}/results`);}
+
+
     }));
 
 router

@@ -3,6 +3,8 @@ const pollRoutes = require('./polls');
 const loginRoutes = require('./login');
 const rosterRoutes = require('./rosters');
 const adminRoutes = require('./admin');
+const createRoutes = require('./create');
+const registerRoutes = require('./register')
 
 const notFound = (name) => (req, res) => {
     res.status(404).render('error', {
@@ -44,6 +46,8 @@ const constructorMethod = (app) => {
     app.use('/polls', pollRoutes);
     app.use('/rosters', rosterRoutes);
     app.use('/admin', adminRoutes);
+    app.use('/create', createRoutes);
+    app.use('/register', registerRoutes)
 
     app.use('*', notFound('Page'))
 };

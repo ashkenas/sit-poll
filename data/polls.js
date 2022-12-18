@@ -4,59 +4,89 @@ const { stringifyId, statusError, sync } = require("../helpers");
 const { requireId, requireInteger, requireOptions, requireDate, requireBoolean, requireString, validReactions } = require("../validation");
 const { getUserById } = require("./users");
 
-
-
-const createPoll = async (title, choices, authorID, public_bool, close_date, rosterId) =>{
+const updatePoll = async (poll_id, title, choices, close_date) =>{
+    
+    poll_id = requireId(poll_id, "poll_id");
     title = requireString(title, 'title');
     choices = requireOptions(choices, 'choices');
-    authorID = requireId(authorID, 'authorID');
-    public_bool = requireBoolean(public_bool, 'public_bool');
     close_date = requireDate(close_date, 'poll close date');
-    rosterId = requireId(rosterId, 'roster');
 
-    let posted_date = new Date();
     let closed = new Date(close_date);
 
-    id = ObjectId();
-    let new_poll = {
+    const pollCol = await polls();
+
+    const updateInfo = await pollCol.updateOne(
+        {"_id": poll_id},
+        {$set: {
+            "title": title,
+            "choices": choices,
+            "close_date": closed
+             }})
+    
+    if (updateInfo.modifiedCount === 0) {throw statusError(503, "Poll edit failed");}
+
+    retval = {
+        status: "success",
+        poll_Id: poll_id
+    }
+    return retval;
+
+}
+
+
+const createPoll = async (title, choices, authorID, public, close_date, rosterId) =>{
+    title = requireString(title, 'title');
+    if (title.length < 5)
+        throw 'Title must be at least 5 characters long.';
+    choices = requireOptions(choices, 'choices');
+    if (choices.length < 2)
+        throw 'Must provide at least 2 choices';
+    authorID = requireId(authorID, 'authorID');
+    const author = await getUserById(authorID);
+    if (!author)
+        throw 'Author does not exist.';
+    public = requireBoolean(public, 'public');
+    close_date = requireDate(close_date, 'close_date').getTime();
+    if (close_date < Date.now())
+        throw 'Poll must close after current date.';
+    rosterId = requireId(rosterId, 'rosterId');
+
+    const id = ObjectId();
+    const new_poll = {
         _id: id,
         title: title,
         choices: choices,
         author: authorID,
-        public: public_bool,
-        posted_date: posted_date,
-        close_date: closed,
+        public: public,
+        posted_date: Date.now(),
+        close_date: close_date,
         votes: [],
         reactions: [],
         comments: []
-    }
+    };
 
     const pollCol = await polls();
 
-    const newInstertInformation = await pollCol.insertOne(new_poll);
-    if (newInstertInformation.instertedCount === 0){throw statusError(503, 'Poll creation failed.')}
-
-    author = getUserById(authorID);
+    const pollInsertResult = await pollCol.insertOne(new_poll);
+    console.log(pollInsertResult);
+    if (!pollInsertResult.acknowledged)
+        throw 'Poll creation failed.';
 
     const userCol = await users();
 
     const updateInfo = await userCol.updateOne(
-        //query
-        {rosters:{$elemMatch:{_id:rosterId}}},
-        {$push: {"rosters.$.polls":id}}
+        { rosters: { $elemMatch: { _id: rosterId } } },
+        { $push: { 'rosters.$.polls': id } }
     );
+    
+    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
+        throw 'Roster not found.';
 
-    //console.log(updateInfo.modifiedCount);
-
-    //need to add poll to roster
-    retval = {
-        status: "success",
-        poll_Id: id
-    }
-    return retval;
+    return {
+        success: true,
+        pollId: id
+    };
 }
-
-
 
 /**
  * Checks if a poll exists
@@ -583,6 +613,7 @@ const deleteComment = async (commentId) => {
 };
 
 module.exports = {
+    updatePoll,
     createPoll,
     addComment,
     deleteComment,

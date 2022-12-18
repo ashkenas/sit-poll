@@ -1,0 +1,49 @@
+<section class="section">
+    <div class="container is-max-desktop">
+        <h1 class="title">Log In</h1>
+        <form id="login-form" method="post">
+            <div class="field">
+                <label for="email" class="label">Email</label>
+                <div class="control">
+                    <div class="field has-addons">
+                        <div class="control is-expanded">
+                            <input class="input" type="text" id="email" name="email" placeholder="Email without @stevens.edu">
+                        </div>
+                        <div class="control">
+                            <button class="button" type="button" disabled>@stevens.edu</button>
+                        </div>
+                    </div>
+                </div>
+                <p id="email-error" class="help is-danger error"></p>
+            </div>
+            <div class="field">
+                <label for="password" class="label">Password</label>
+                <div class="control">
+                    <input class="input" type="password" id="password" name="password">
+                </div>
+                <p id="pass-error" class="help is-danger error"></p>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Log In">
+                <a href="/register" class="button is-primary">Register</a>
+            </div>
+        </form>
+    </div>
+</section>
+<script>
+    const showEmailError = errorManager('email-error');
+    const showPassError = errorManager('pass-error');
+
+    handleForm('login-form', 'POST', '/login', (formData) => {
+        const email = formData.get('email');
+        const password = formData.get('password');
+        if(email === "")
+            return showEmailError('An email must be provided.');
+        showEmailError();
+        if(password === "")
+            return showPassError('A password must be provided.');
+        showPassError();
+
+        return { email: email, password: password };
+    });
+</script>
