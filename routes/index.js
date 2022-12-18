@@ -4,7 +4,8 @@ const loginRoutes = require('./login');
 const rosterRoutes = require('./rosters');
 const adminRoutes = require('./admin');
 const createRoutes = require('./create');
-const registerRoutes = require('./register')
+const registerRoutes = require('./register');
+const editProfileRoutes = require('./editProfile');
 const logoutRoutes = require('./logout')
 const passwordRoutes = require('./password')
 
@@ -50,7 +51,8 @@ const constructorMethod = (app) => {
     app.use('/rosters', rosterRoutes);
     app.use('/admin', adminRoutes);
     app.use('/create', createRoutes);
-    app.use('/register', registerRoutes)
+    app.use('/register', registerRoutes);
+    app.use('/editProfile', editProfileRoutes);
     app.use('/logout', logoutRoutes)
     app.use('/change-password', passwordRoutes)
 

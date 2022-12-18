@@ -1,0 +1,28 @@
+<section class="section">
+    <div class="container is-max-dekstop">
+        <h1 class="title">Edit Profile</h1>
+            <div class="field">
+                <p for="display_name" class="label">Display Name:</p>
+                <p>{{displayName}}</p>
+                <a href="/editProfile/changeDisplayName/{{id}}" class="updateRoster">Change name</a>
+            </div>
+            <div class="field">
+                <p class="label" for="date_of_birth">Date of Birth:</p>
+                <p>{{DOB}}</p>
+            </div>
+            <div class="field">
+                <p class="label" for="year">Class Year:</p>
+                <p>{{classYear}}</p>
+            </div>
+            <div class="field">
+                <p class="label" for="gender">Gender:</p>
+                <p>{{gender}}</p>
+                <a href="/editProfile/changeGender/{{id}}" class="updateRoster">Change gender</a>
+            </div>
+            <div class="field">
+                <p class="label" for="major">Major, School/College:</p>
+                <p>{{major}}, {{school}}</p>
+                <a href="/editProfile/changeMajor/{{id}}" class="updateRoster">Change major</a>
+            </div>
+    </div>
+</section>

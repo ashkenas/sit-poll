@@ -1,0 +1,28 @@
+<section class="section">
+    <div class="container is-max-dekstop">
+        <h1 class="title">Change Gender</h1>
+        <form id="gender-form" method="post">
+            <div class="field">
+                <label class="label" for="gender">Gender</label>
+                <div class="control">
+                    <select class="select" id="gender" name="gender">
+                        {{#each genders}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Change">
+                <a href="/editProfile" class="button is-primary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+<script>
+  console.log('in script')
+    handleForm('gender-form', 'POST', '/editProfile/changeGender/' + {{id}}, (formData) => {
+      console.log('handled');
+        return {
+            gender: formData.get('gender'),
+        };
+    });
+</script>
