@@ -26,8 +26,8 @@ router
         const display_name = req.body.display_name;
         if(display_name.length < 2)
             throw 'Display name must be at least 2 characters long.';
-        if(display_name.match(/[^a-z.'\-]/i))
-            throw 'Display name can only contain letters, periods, and apostrophes.';
+        if(display_name.match(/[^a-z.' \-]/i))
+            throw 'Display name can only contain letters, periods, spaces, and apostrophes.';
         if(!validGenders.includes(req.body.gender))
             throw 'Invalid gender.';
         if(!validSchools.includes(req.body.school))

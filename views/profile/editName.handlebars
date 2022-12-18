@@ -1,0 +1,34 @@
+<section class="section">
+    <div class="container is-max-dekstop">
+        <h1 class="title">Change Password</h1>
+        <form id="display-name-form" method="post">
+            <div class="field">
+                <label for="display_name" class="label">Display Name</label>
+                <div class="control">
+                    <input class="input" type="text" id="display_name" name="display_name">
+                </div>
+                <p id="name-error" class="help is-danger error"></p>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Change">
+                <a href="/editProfile" class="button is-primary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+<script>
+    const showNameError = errorManager('name-error');
+
+    handleForm('display-name-form', 'POST', '/editProfile/changeDisplayName/' + {{id}}, (formData) => {
+        const display_name = formData.get('display_name');
+        if(display_name.length < 2)
+            return showNameError('Display name must be at least 2 characters long.');
+        if(display_name.match(/[^a-z.' \-]/i))
+            return showNameError('Display name can only contain letters, periods, spaces, and apostrophes.');
+        showNameError();
+
+        return {
+            display_name: display_name
+        };
+    });
+</script>
