@@ -1,0 +1,68 @@
+<div class="section">
+    <h1>Edit Poll</h1>
+
+    <form id = "pollEditForm" method="post">
+        <input type="hidden" id="pollId" name="pollId" value="{{id}}">
+
+        <label for="avail-date">Poll available until:</label>
+        <input type="datetime-local" id="availDate" name="availDate"> <br><br> <!--value="{{dateTimeLocalValue}}" min="{{dateTimeLocalValue}}"-->
+
+        <label for="pollTitle">Poll Title:</label>
+        <input type="text" id="pollTitle" name="pollTitle" value="{{title}}"><br><br>
+
+        <!--Handlebars this-->
+        {{#each choices}}
+        <label for="option{{number}}" id="label{{number}}">Choice {{number}}:</label> 
+        <input type="text" id="option{{number}}" name="option" value="{{choice}}"><br id="br{{number}}">
+        {{/each}}
+        
+    </form>
+    <button onclick="createOption()">Add Option</button>
+    <button onclick="removeOption()">Remove Option</button><br>
+    <button type="submit" form="pollEditForm">Submit</button>
+
+        <script>
+            
+            var form = document.getElementById("pollEditForm");
+            var optionCounter = {{opCounter}}; //dont forget to use given optionCounter
+             
+            function createOption(){
+                var name = "option" + optionCounter;
+                var option = document.createElement("input");
+                option.setAttribute("type","text");
+                option.setAttribute("id",name);
+                option.setAttribute("name","option");
+                option.setAttribute("placeholder","Choice "+optionCounter);
+
+                var label = document.createElement("label");
+                label.setAttribute("for",name);
+                label.setAttribute("id","label"+optionCounter);
+                label.innerText="Choice "+optionCounter+": ";
+
+                var br = document.createElement("br");
+                br.setAttribute("id", "br"+optionCounter);
+
+                form.appendChild(label);
+                form.appendChild(option);
+                form.appendChild(br);
+                optionCounter+=1;
+            }
+
+            function removeOption(){
+                if(optionCounter>3){
+                    optionCounter-=1;
+                    var label = document.getElementById("label"+optionCounter);
+                    var br = document.getElementById("br"+optionCounter);
+                    var option = document.getElementById("option"+optionCounter);
+                    console.log(optionCounter);
+
+                    label.remove();
+                    br.remove();
+                    option.remove();
+                }else {
+                    //do nothing
+                }
+            }
+
+        </script>
+</div>
