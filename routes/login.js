@@ -18,7 +18,7 @@ router
         if(!(await bcrypt.compare(password, user.pass_hash))) 
             throw statusError(400, "Either the username or password is invalid.");
 
-        if((await validateUser(email, password)).authenticatedUser) {
+        if((await validateUser(`${email}@stevens.edu`, password)).authenticatedUser) {
             req.session.userId = user._id;
             req.session.manager = user.is_manager;
             req.session.admin = user.is_admin;
