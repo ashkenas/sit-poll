@@ -73,7 +73,6 @@ const createPoll = async (title, choices, authorID, public, close_date, rosterId
     const pollCol = await polls();
 
     const pollInsertResult = await pollCol.insertOne(new_poll);
-    console.log(pollInsertResult);
     if (!pollInsertResult.acknowledged)
         throw 'Poll creation failed.';
 
@@ -110,6 +109,7 @@ const deletePoll = async (poll_id) => {
     if (!(await pollExists(poll_id)))
         throw 'Poll does not exist found.';
 
+    const userCol = await users();
     const removePollFromRosterInfo = await userCol.updateOne(
         { rosters: { $elemMatch: { polls: poll_id } } },
         { $pull: {"rosters.$.polls": poll_id } }

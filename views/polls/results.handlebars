@@ -1,11 +1,14 @@
 <div class="section">
     <div class="container is-max-desktop">
         <h1 class="title is-1">Results</h1>
-        {{#if session.manager}}
-            <div class="buttons">
+        <div class="buttons">
+            {{#if session.manager}}
                 <a class="button is-info" href="/polls/{{poll._id}}/metrics">Metrics</a>
-            </div>
-        {{/if}}
+            {{/if}}
+            {{#if (or session.admin self)}}
+                <button id="delete-button" class="button is-danger">Delete</a>
+            {{/if}}
+        </div>
         <h2 class="title">{{poll.title}}</h1>
         <p class="subtitle">By <span>{{author}}</span></p>
         <div id="votes" style="margin-bottom:1rem;"></div>
@@ -182,6 +185,26 @@ const handleReaction = (() => {
         handling = false;
     };
 })();
+
+{{#if (or session.admin self)}}
+document.getElementById('delete-button').addEventListener('click', async () => {
+    if(!confirm('Are you sure you want to delete this poll?')) return;
+
+    const result = await fetch('/polls/{{poll._id}}/', {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        method: 'DELETE'
+    });
+
+    const data = await result.json();
+
+    if (result.ok && data.redirect)
+        window.location = data.redirect;
+    else alert(data.error || 'Internal server error.');
+});
+{{/if}}
 
 Object.keys(buttons).forEach((reaction) => {
     buttons[reaction].addEventListener('click', (event) => handleReaction(reaction));

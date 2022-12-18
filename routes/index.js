@@ -25,7 +25,8 @@ const authMiddleware = (req, res, next) => { // Redirect if not logged in
     } else {
         res.locals.session = {
             userId: req.session.userId,
-            manager: req.session.manager || req.session.admin || false
+            manager: req.session.manager || req.session.admin || false,
+            admin: req.session.admin
         };
         next();
     }

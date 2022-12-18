@@ -108,7 +108,7 @@ router
 
         const stat = await deletePoll(req.params.id);
         if (stat.success)
-            res.redirect('/polls');
+            res.json({ redirect: '/polls' });
         else
             throw statusError(500, 'Failed to delete poll.');
     }));
@@ -167,6 +167,7 @@ router
             poll: poll,
             vote: vote === null ? -1 : vote,
             userId: req.session.userId,
+            self: poll.author.toString() === req.session.userId,
             reaction: await getReaction(req.params.id, req.session.userId),
             author: (await getUserById(poll.author)).display_name,
         });
