@@ -15,7 +15,7 @@ router
     }))
     .post(validate(
         ['email', 'password', 'display_name', 'class_year', 'major', 'gender', 'school', 'date_of_birth']
-    ), sync(async (req, res) => { // Validate credentials (TODO: Not present?), setup session
+    ), sync(async (req, res) => { // Validate credentials, setup session
         const email = req.body.email.toLowerCase();
         if(!email.match(/^[a-z]{3,}[0-9]*$/))
             throw statusError(400, "Invalid Stevens email address.");
