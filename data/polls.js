@@ -7,9 +7,18 @@ const { getUserById } = require("./users");
 const updatePoll = async (poll_id, title, choices, close_date) =>{
     
     poll_id = requireId(poll_id, "poll_id");
+    const poll = await getPollById(poll_id);
+    if(!poll)
+        throw 'Poll does not exist';
     title = requireString(title, 'title');
+    if (title.length < 5)
+        throw 'Title must be at least 5 characters long.';
     choices = requireOptions(choices, 'choices');
+    if (choices.length < 2)
+        throw 'Must provide at least 2 choices';
     close_date = requireDate(close_date, 'poll close date');
+    if (close_date < Date.now())
+        throw 'Poll must close after current date.';
 
     let closed = new Date(close_date);
 
@@ -23,7 +32,7 @@ const updatePoll = async (poll_id, title, choices, close_date) =>{
             "close_date": closed
              }})
     
-    if (updateInfo.modifiedCount === 0) {throw statusError(503, "Poll edit failed");}
+    if (!updateInfo.acknowledged || !updateInfo.modifiedCount) {throw "Poll edit failed";}
 
     retval = {
         status: "success",
@@ -98,6 +107,26 @@ const pollExists = async (id) => {
     const pollsCol = await polls();
     const poll = await pollsCol.findOne({ _id: id }, { projection: { _id: 1 } });
     return poll !== null;
+};
+
+const deletePoll = async (poll_id) => {
+    poll_id = requireId(poll_id);
+    if (!(await pollExists(poll_id)))
+        throw 'Poll does not exist found.';
+
+    const removePollFromRosterInfo = await userCol.updateOne(
+        { rosters: { $elemMatch: { polls: poll_id } } },
+        { $pull: {"rosters.$.polls": poll_id } }
+    );
+    if(!removePollFromRosterInfo.acknowledged || !removePollFromRosterInfo.modifiedCount)
+        throw 'Failed to remove poll from roster.';
+
+    const pollCol = await polls();
+    const deletePollInfo = await pollCol.deleteOne({ _id: poll_id });
+    if(!deletePollInfo.deletedCount)
+        throw 'Failed to delete poll.';
+
+    return { success: true };
 };
 
 /**
@@ -615,6 +644,7 @@ const deleteComment = async (commentId) => {
 module.exports = {
     updatePoll,
     createPoll,
+    deletePoll,
     addComment,
     deleteComment,
     deleteReaction,
