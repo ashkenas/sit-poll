@@ -36,7 +36,7 @@ router
             throw 'Invalid major.';
         const class_year = req.body.class_year;
         const thisYear = (new Date()).getFullYear();
-        if(class_year < thisYear || class_year >= thisYear + 8)
+        if((class_year < thisYear || class_year >= thisYear + 8) && class_year !== 0)
             throw 'Invalid class year';
         const date_of_birth = req.body.date_of_birth;
         if(date_of_birth > new Date())

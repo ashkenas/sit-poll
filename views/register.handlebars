@@ -40,7 +40,9 @@
             <div class="field">
                 <label class="label" for="year">Class Year</label>
                 <div class="control">
-                    <select class="select" id="year" name="class_year"></select>
+                    <select class="select" id="year" name="class_year">
+                        <option value="0">Not Enrolled</option>
+                    </select>
                 </div>
             </div>
             <div class="field">
@@ -69,7 +71,7 @@
             </div>
             <div class="buttons">
                 <input class="button is-link" type="submit" value="Register">
-                <a href="/login" class="button is-primary">I have an account</a>
+                <a href="/login" class="button">I have an account</a>
             </div>
         </form>
     </div>

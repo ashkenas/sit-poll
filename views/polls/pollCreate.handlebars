@@ -2,16 +2,18 @@
     <div class="container is-max-desktop">
         <h1 class="title">Create Poll</h1>
         <form id="poll-form">
-            <div class="field">
-                <label for="roster" class="label">Roster to Poll</label>
-                <div class="control">
-                    <select class="select" id="roster" name="roster">
-                        {{#each rosters}}
-                            <option value="{{_id}}" {{#unless @index}}selected{{/unless}}>{{label}}</option>
-                        {{/each}}
-                    </select>
+            {{#unless session.admin}}
+                <div class="field">
+                    <label for="roster" class="label">Roster to Poll</label>
+                    <div class="control">
+                        <select class="select" id="roster" name="roster">
+                            {{#each rosters}}
+                                <option value="{{_id}}" {{#unless @index}}selected{{/unless}}>{{label}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
                 </div>
-            </div>
+            {{/unless}}
             <div class="field">
                 <label for="close_date" class="label">Poll Close Date</label>
                 <div class="control">
@@ -41,8 +43,8 @@
                 <p id="option-error-2" class="help error is-danger"></p>
             </div>
             <div class="buttons">
-                <button class="button is-primary" id="add-option" type="button">Add Option</button>
-                <button class="button is-danger" id="remove-option" type="button" style="display: none;">Remove Last Option</button>
+                <button class="button" id="add-option" type="button">Add Option</button>
+                <button class="button is-danger has-text-black" id="remove-option" type="button" style="display: none;">Remove Last Option</button>
                 <input class="button is-link" type="submit">
             </div>
         </form>
@@ -93,8 +95,6 @@ const titleManager = errorManager('title-error');
 const dateManager = errorManager('date-error');
 
 handleForm('poll-form', 'POST', '/polls', (formData) => {
-    const roster = formData.get('roster');
-
     const close_date = new Date(formData.get('close_date'));
     if (isNaN(close_date))
         return dateManager('Must provide a valid date.');
@@ -117,7 +117,7 @@ handleForm('poll-form', 'POST', '/polls', (formData) => {
     };
 
     return {
-        roster: roster,
+        {{#unless session.admin}}roster: formData.get('roster'),{{/unless}}
         title: title,
         close_date: close_date,
         choices: options
