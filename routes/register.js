@@ -20,8 +20,8 @@ router
         if(!email.match(/^[a-z]{3,}[0-9]*$/))
             throw statusError(400, "Invalid Stevens email address.");
         const password = req.body.password;
-        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
-            throw statusError(400, "Password must be at least six characters and contain an uppercase letter, a digit, and a special character.");
+        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g) || password.match(/\s/g))
+            throw statusError(400, "Password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.");
         
         const display_name = req.body.display_name;
         if(display_name.length < 2)

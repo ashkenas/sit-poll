@@ -41,8 +41,8 @@ const createUser = async function (email, password, display_name, major, school,
 
     if(!email.match(/^[a-z]{3,}[0-9]*$/))
         throw "Invalid Stevens email address.";
-    if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
-        throw "Password must be at least six characters and contain an uppercase letter, a digit, and a special character.";
+    if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g) || password.match(/\s/g))
+        throw "Password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.";
     if(display_name.length < 2)
         throw 'Display name must be at least 2 characters long.';
     if(display_name.match(/[^a-z.'\-]/i))
