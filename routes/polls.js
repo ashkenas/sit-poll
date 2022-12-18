@@ -5,7 +5,7 @@ const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
-const { addComment, getPollById, createPoll, updatePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
+const { addComment, getPollById, createPoll, updatePoll, deletePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
 const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
@@ -77,11 +77,39 @@ router
         // Now that the vote has been processed, tell the webpage to redirect the user
         res.json({ redirect: path.join(req.originalUrl, 'results') });
     }))
-    .put(sync(async (req, res) => { // Update poll
-        notImplemented(res);
+    .put(validate( // Update a poll
+        ['title', 'choices', 'close_date']
+    ), sync(async (req, res) => {
+        const title = req.body.title;
+        const choices = req.body.choices;
+        const close_date = req.body.close_date;
+
+        const poll = await getPollById(req.params.id);
+       
+        if (close_date < Date.now())
+            throw statusError(400, 'Close date must be in the future.');
+
+        if (choices.length !== poll.choices.length)
+            throw statusError(400, 'Cannot change number of options.');
+        
+        if (title.length < 5)
+            throw statusError(400, 'Title must be at least 5 characters long.');
+
+        const stat = await updatePoll(poll_id, title, choices, close_date);
+        //check if update is successful
+        if (stat.status === "success") {res.json({redirect: `/polls/${stat.poll_Id}/results`});}
     }))
     .delete(sync(async (req, res) => { // Delete poll
-        notImplemented(res);
+        const poll = await getPollById(req.params.id);
+
+        if (!(poll.author.toString() === req.session.userId || req.session.admin))
+            throw statusError(403, 'You do not have permission to delete this poll');
+
+        const stat = await deletePoll(req.params.id);
+        if (stat.success)
+            res.redirect('/polls');
+        else
+            throw statusError(500, 'Failed to delete poll.');
     }));
 
 router
@@ -123,23 +151,7 @@ router
             choices: poll_choices,
             close_date: poll_close_date,
             opCounter: poll_opCounter
-        })
-
-    }))
-    .post(sync(async (req, res) => { //update poll
-        const title = req.body.pollTitle;
-        title = requireString(title, 'title');
-        const choices = req.body.option;
-        choices = requireOptions(choices, 'choices');
-        const poll_id = req.body.pollId;
-        poll_id = requireId(poll_id, 'poll_id');
-        const close_date = req.body.availDate;
-        close_date = requireDate(close_date, 'close_date');
-        const stat = await updatePoll(poll_id, title, choices, close_date);
-        //check if update is successful
-        if (stat.status === "success") {res.redirect(`/polls/${stat.poll_Id}/results`);}
-
-
+        });
     }));
 
 router
