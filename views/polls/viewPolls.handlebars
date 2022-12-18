@@ -1,8 +1,25 @@
 <div class="section">
     <div class="container is-max-desktop">
         <h1 class="title">Polls</h1>
+        <div class="level">
+            <div class="level-item">
+                <label class="checkbox">
+                    <input type="checkbox" class="checkbox">
+                    Only Open Polls
+                </label>
+            </div>
+            <div class="level-item">
+                <div class="select">
+                    <select aria-label="school">
+                        <option value="any" selected>All Schools/Colleges</option>
+                        {{#each schools}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+        </div>
         {{#each polls}}
-            <section class="poll-listing" data-href="/polls/{{_id}}">
+            <section class="poll-listing" data-href="/polls/{{_id}}" data-closes="{{close_date}}"
+                data-school="{{school}}">
                 <h2 class="title is-3 poll-title">{{title}}</h2>
                 <div class="level subtitle">
                     <div class="level-left">
@@ -12,7 +29,7 @@
                     </div>
                     <div class="level-left">
                         <div class="level-item">
-                            <p class="subtitle is-5">Closes on {{closeDate close_date}}</p>
+                            <p class="subtitle is-5">{{closeDate close_date}}</p>
                         </div>
                     </div>
                 </div>
@@ -21,9 +38,27 @@
     </div>
 </div>
 <script>
+const polls = [];
+
 document.querySelectorAll('.poll-listing').forEach(poll => {
+    polls.push([+poll.getAttribute('data-closes'), poll.getAttribute('data-school'), poll]);
     poll.addEventListener('click', (event) => {
         window.location = poll.getAttribute('data-href');
     });
 });
+
+polls.sort((a, b) => a[0] - b[0]);
+
+const cb = document.querySelector('input[type="checkbox"]');
+const school = document.querySelector('select');
+
+const filterPolls = () => {
+    polls.forEach(poll => poll[2].style.display = 'none');
+    polls.filter(poll => !cb.checked || poll[0] > Date.now())
+         .filter(poll => school.value === 'any' || poll[1] === school.value)
+         .forEach(poll => poll[2].style.display = 'block');
+};
+
+cb.addEventListener('change', filterPolls);
+school.addEventListener('change', filterPolls);
 </script>

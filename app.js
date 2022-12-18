@@ -84,7 +84,7 @@ app.engine('handlebars', exphbs.engine({
         },
         closeDate: (d) => {
             const date = new Date(d);
-            return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+            return `Close${date > new Date() ? 's' : 'd'} on ${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
         },
         json: (data) => JSON.stringify(data, null, 4)
     }
