@@ -118,7 +118,7 @@ const main = async () => {
     const start = Date.now();
     process.stdout.write('Creating users... ');
     // Make an admin
-    const admin = await User('admin@stevens.edu', 'pass1234', 'Admin', '', '', '', 0, 0, true, false);
+    const admin = await User('admin@stevens.edu', 'Admin1!', 'Admin', '', '', '', 0, 0, true, false);
     // Load students
     const cs2026 = await dataToUsers(require('../seed_data/cs2026.json'));
     const cs2025 = await dataToUsers(require('../seed_data/cs2025.json'));
@@ -174,13 +174,13 @@ const main = async () => {
         'College of Arts and Letters', 'Female', new Date(1964, 1, 4), 0, false, true);
     p101.rosters = [obi101];
     const pNap = await User('sleepy@stevens.edu', 'Prof1!', 'Prof. Sleepy', 'N/A',
-        'College of Arts and Letters', 'Female', new Date(1990, 7, 3), 0, false, true);
+        'School of Business', 'Female', new Date(1990, 7, 3), 0, false, true);
     pNap.rosters = [napping];
     const pWri = await User('essay@stevens.edu', 'Prof1!', 'Prof. SA', 'N/A',
         'College of Arts and Letters', 'Female', new Date(1985, 3, 9), 0, false, true);
     pWri.rosters = [creative];
     const pAct = await User('quickmaf@stevens.edu', 'Prof1!', 'Prof. QuickMaf', 'N/A',
-        'College of Arts and Letters', 'Female', new Date(1981, 8, 3), 0, false, true);
+        'School of Business', 'Female', new Date(1981, 8, 3), 0, false, true);
     pAct.rosters = [accting];
     process.stdout.write('done!\n');
 
