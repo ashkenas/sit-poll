@@ -15,6 +15,6 @@ module.exports = {
         return (req, res, next) => func(req, res, next).catch(next);
     },
     async hashPassword (password) {
-        return await bcrypt.hash(password, 4);
+        return await bcrypt.hash(password, 10);
     }
 };

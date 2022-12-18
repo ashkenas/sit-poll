@@ -103,14 +103,16 @@ const deletePoll = async (poll_id) => {
  */
 const requirePoll = (id) => sync(async (req, res, next) => {
     req.params[id] = requireId(req.params[id], id);
-    const exists = await pollExists(req.params[id]);
-    if (!exists) // Make sure poll exists
+    const poll = await getPollById(req.params[id]);
+    if (poll === null) // Make sure poll exists
         throw statusError(404, 'Poll not found.');
+
+    req.session.self = poll.author.toString() === req.session.userId;
 
     if (req.session.admin) // Admins can always see
         return next();
 
-    if ((await getPollById(req.params[id])).public) // Poll is public
+    if (poll.public) // Poll is public
         return next();
 
     const usersCol = await users();

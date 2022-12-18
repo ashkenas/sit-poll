@@ -52,7 +52,7 @@
                         </p>
                         </div>
                     </div>
-                    {{#if (or ../session.manager (equals this.user._id ../userId))}}
+                    {{#if (or ../session.self (equals this.user._id ../userId))}}
                         <div class="media-right">
                             <form method="POST" action="/polls/{{../poll._id}}/comments">
                                 <input type="hidden" name="_method" value="DELETE">
@@ -107,7 +107,7 @@ const commentsElement = document.getElementById('comments');
 
 const reactedClass = "is-link";
 const vote = {{vote}};
-const manager = {{session.manager}};
+const manager = {{or session.self session.admin}};
 let oldReaction = '{{reaction}}';
 
 const showCommentError = errorManager('comment-error');

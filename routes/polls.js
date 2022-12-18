@@ -58,7 +58,7 @@ router
     .route('/:id')
     .get(sync(async (req, res) => { // Get voting page for poll
         const poll = await getPollInfoById(req.params.id);
-        if (poll.close_date < Date.now() || req.session.manager || req.session.admin)
+        if (poll.close_date < Date.now() || req.session.self || req.session.admin)
             return res.redirect(`/polls/${req.params.id.toString()}/results`);
         res.render('polls/vote', {
             poll: poll,
@@ -67,8 +67,8 @@ router
         });
     }))
     .post(validate(['vote']), sync(async (req, res) => { // Vote on poll
-        if (req.session.manager || req.session.admin)
-            throw statusError(403, 'Only students can vote on polls.');
+        if (req.session.self || req.session.admin)
+            throw statusError(403, 'Cannot vote on your own poll.');
         const poll = await getPollInfoById(req.params.id);
         const vote = req.body.vote;
         if (vote < 0 || vote >= poll.choices.length)
@@ -143,14 +143,14 @@ router
     .get(sync(async (req, res) => { // Results page for poll
         const vote = await getVote(req.params.id, req.session.userId);
         const poll = await getPollResults(req.params.id);
-        if (vote === null && poll.close_date > Date.now() && !req.session.manager && !req.session.admin)
+        if (vote === null && poll.close_date > Date.now() && !req.session.self && !req.session.admin)
             return res.redirect(`/polls/${req.params.id.toString()}`);
 
         res.render('polls/results', {
             poll: poll,
             vote: vote === null ? -1 : vote,
             userId: req.session.userId,
-            self: poll.author.toString() === req.session.userId,
+            self: req.session.self,
             reaction: await getReaction(req.params.id, req.session.userId),
             author: (await getUserById(poll.author)).display_name,
             editable: poll.totalVotes === 0
@@ -161,7 +161,7 @@ router
     .route('/:id/metrics')
     .get(sync(async (req, res) => { // Results page for poll
         const poll = await getPollResults(req.params.id);
-        if (!((req.session.manager && !poll.public) || req.session.admin))
+        if (!(req.session.self || req.session.admin))
                 throw statusError(403, 'Permission denied.');
 
         res.render('polls/metrics', {
@@ -183,7 +183,7 @@ router
     .delete(validate(['_id']), sync(async (req, res) => { // Delete comment on poll
         const comment = await getComment(req.body._id);
         if (!comment) throw statusError(400, 'Comment does not exist, cannot delete.');
-        if (!(comment.user.equals(req.session.userId) || req.session.manager || req.session.admin))
+        if (!(comment.user.equals(req.session.userId) || req.session.self || req.session.admin))
             throw statusError(403, 'Cannot delete comment left by another user.');
 
         await deleteComment(req.body._id);
