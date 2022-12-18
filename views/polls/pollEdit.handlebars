@@ -48,8 +48,9 @@ const optionTemplate = document.getElementById('option-template').content.firstE
 const buttons = document.querySelector('.buttons');
 const removeButton = document.getElementById('remove-option');
 const errorManagers = {
-    option1: errorManager('option-error-1'),
-    option2: errorManager('option-error-2')
+    {{#each poll.choices}}
+    option{{addOne @index}}: errorManager('option-error-{{addOne @index}}'),
+    {{/each}}
 };
 
 if (options > 2)
