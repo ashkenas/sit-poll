@@ -22,14 +22,14 @@
                         <div>
                             <div class="media">
                                 <div class="media-left">
-                                    <label for="{{../handle}}-{{@index}}" class="label">{{@key}}</label>
+                                    <label for="{{../name}}-{{@index}}" class="label">{{@key}}</label>
                                 </div>
                                 <div class="media-content"></div>
                                 <div class="media-right">
                                     <p>{{this.total}} ({{this.ratio}}%)</p>
                                 </div>
                             </div>
-                            <progress id="{{../handle}}-{{@index}}" class="progress" max="100" value="{{this.ratio}}"></progress>
+                            <progress id="{{../name}}-{{@index}}" class="progress" max="100" value="{{this.ratio}}"></progress>
                         </div>
                     {{/each}}
                 </section>
