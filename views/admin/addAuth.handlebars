@@ -1,0 +1,10 @@
+<h1>Add {{auth}}</h1>
+
+<form id="add-auth-form" method="POST" action="/admin/add/{{auth}}">
+  <input type="hidden" name="_method" value="PATCH">
+
+  <label id="authLabel" for="authEmailInput">{{auth}} Email to Add:</label><br>
+  <input type="email" placeholder="auth@stevens.edu" id="authEmailInput" name="authEmailInput" pattern=".+@stevens\.edu" required><br>
+
+  <button type="submit" id="submit">Submit</button>
+</form>

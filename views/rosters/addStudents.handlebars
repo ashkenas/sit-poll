@@ -1,0 +1,18 @@
+<h1>Add people to {{rosterLabel}}</h1>
+
+<form id="edit-roster-form" method="POST" action="/rosters/edit/add/{{rosterId}}">
+  <input type="hidden" name="_method" value="PATCH">
+
+  {{!-- dropdown adapted from https://www.w3schools.com/tags/tag_select.asp --}}
+  <label id="categoryLabel" for="category">Add students or assistants:</label>
+
+  <select id="dropdown" name="category" id="categoryInput">
+    <option value="students">Students</option>
+    <option value="assistants">Assistants</option>
+  </select><br>
+
+  <label id="studentLabel" for="studentEmailInput">Student Email(s) to Add:</label><br>
+  <input type="email" placeholder="student@stevens.edu" id="studentEmailInput" name="studentEmailInput" pattern=".+@stevens\.edu" multiple required><br>
+
+  <button type="submit" id="submit">Submit</button>
+</form>

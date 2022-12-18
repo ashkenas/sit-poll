@@ -1,0 +1,40 @@
+<h1>Rosters</h1>
+
+<a href="/rosters/createRoster" class="button">Create new roster</a>
+
+{{#if rosters.length}}
+  {{#each rosters}}
+    <table>
+      <caption>{{this.label}}</caption>
+      <tr>
+        <th>Students</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+      {{#each this.students}}
+        <tr>
+          <td>{{this}}</td>        
+          {{!-- todo: change route to file that handles student stuff --}}  
+          <td>Student</td>
+          <td><a href="/rosters/edit/{{../this._id}}/remove/{{this}}" class="updateRoster">Remove student</a></td>
+        </tr>
+      {{/each}}
+      {{#each this.assistants}}
+        <tr>
+          <td>{{this}}</td>
+          <td>TA</td>
+          <td><a href="/rosters/edit/{{../this._id}}/remove/{{this}}" class="updateRoster">Remove assistant</a></td>
+        </tr>
+      {{/each}}
+    </table>
+    <a href="/rosters/edit/title/{{this._id}}" class="updateRoster">Change title</a>
+
+    {{!-- todo: change route to file that handles student stuff --}}  
+    <a href="/rosters/edit/add/{{this._id}}" class="updateRoster">Add student(s)</a>
+    
+    <a href="/rosters/delete/{{this._id}}" class="updateRoster">Delete roster</a>
+    <br><br>
+  {{/each}}
+{{else}}
+  <p>No rosters exist yet</p>
+{{/if}}

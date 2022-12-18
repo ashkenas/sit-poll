@@ -1,6 +1,8 @@
 const path = require('path');
 const pollRoutes = require('./polls');
 const loginRoutes = require('./login');
+const rosterRoutes = require('./rosters');
+const adminRoutes = require('./admin');
 const createRoutes = require('./create');
 const registerRoutes = require('./register')
 const logoutRoutes = require('./logout')
@@ -45,6 +47,8 @@ const constructorMethod = (app) => {
     app.get('/', (req, res) => res.redirect('/polls'));
     app.use('/login', loginRoutes);
     app.use('/polls', pollRoutes);
+    app.use('/rosters', rosterRoutes);
+    app.use('/admin', adminRoutes);
     app.use('/create', createRoutes);
     app.use('/register', registerRoutes)
     app.use('/logout', logoutRoutes)

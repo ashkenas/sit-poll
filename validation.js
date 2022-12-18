@@ -71,6 +71,38 @@ const requireDate = (date, name) => {
     return date;
 };
 
+// given array of emails, return array of valid emails
+const requireEmails = (emails, name) => {
+    exists(emails, name);
+    emails = requireOptions(emails, name);
+    return emails.map((email) => {
+        return requireEmail(email);
+    });
+}
+
+// given array of one email, return valid email
+const requireEmail = (email, name) => {
+    exists(email, name);
+    email = requireString(email, name);
+    if(email.trim().toLowerCase().endsWith('@stevens.edu')) {
+        const handle = email.substring(0, email.length - '@stevens.edu'.length + 1);
+        if(!/[a-zA-Z0-9.]/.test(handle)) {
+            throw statusError(400, `${email} is not a valid email`);
+        }
+    } else {
+        throw statusError(400, `${email} is not a valid email`);
+    }
+    return email.trim().toLowerCase();
+}
+
+const checkCategory = (category, name) => {
+    exists(category, name);
+    category = requireString(category).toLowerCas();
+    if (category !== 'students' && category !== 'assistants')
+        throw statusError(400, `${category || "category"} is undefined`);
+    return category;
+}
+
 const dataTypes = {
     _id: requireId,
     email: requireString,
@@ -196,8 +228,11 @@ const validGenders = [
 ];
 
 module.exports = {
+    checkCategory,
     requireBoolean,
     requireDate,
+    requireEmail,
+    requireEmails,
     requireId,
     requireInteger,
     requireNumber,

@@ -1,0 +1,104 @@
+<h1>Create New Roster By File Upload:</h1>
+
+<form id="file-roster-form" method="POST" enctype="multipart/form-data" action="/rosters/createRoster">
+  <label id="rosterFileLabel" for="titleInputFile">Title:</label><br>
+  <input type="text" placeholder="Roster Name" id="titleInputFile" name="titleInputFile" required><br>
+
+  <label id="uploadLabel" for="rosterCSV">Upload CSV:</label><br>
+  <input id="rosterCSV" type="file" accept=".csv" name="fileInput" required><br>
+
+  <label id="assistantLabelFile" for="assistantEmailInputFile">Assistants:</label><br>
+  <input type="email" placeholder="assistant@stevens.edu" id="assistantEmailInputFile" name="assistantEmailInputFile" pattern=".+@stevens\.edu" multiple><br>
+  
+  <button type="submit" id="submit">Submit</button>
+</form>
+<script src="/public/js/uploadRoster.js"></script>
+
+<form id="italian-csv" method="POST" action="/rosters/createRoster">
+  <input id="hiddenRosterLabel" type='hidden' name="hiddenRosterLabel">  
+  <input id="hiddenCSVString" type='hidden' name="hiddenCSVString">
+  <input id="hiddenAssistantEmails" type='hidden' name="hiddenAssistantEmails">  
+</form>
+
+<script>
+  function uploadDealcsv () {}; 
+
+  /*------ Method for read uploded csv file ------*/
+  uploadDealcsv.prototype.getCsv = function(e) {
+      let input = document.getElementById('rosterCSV');
+      input.addEventListener('change', function() {
+        
+        if (this.files && this.files[0]) {
+            var myFile = this.files[0];
+            var reader = new FileReader();
+            
+            reader.addEventListener('load', function (e) {
+                let csvdata = e.target.result; 
+                parseCsv.getParsecsvdata(csvdata); // calling function for parse csv data 
+            });
+            reader.readAsBinaryString(myFile);
+        }
+      });
+    }
+
+    /*------- Method for parse csv data and display --------------*/
+    uploadDealcsv.prototype.getParsecsvdata = function(data) {
+      console.log(data);
+        let parsedata = [];
+
+        let newLinebrk = data.split("\n");
+        for(let i = 0; i < newLinebrk.length; i++) {
+            parsedata.push(newLinebrk[i].split(","))
+        }
+
+        console.table(parsedata);
+        return parseData;
+    }
+
+    let form = document.getElementById('file-roster-form');
+    
+    const submitHandler = async (event) => {
+      event.preventDefault()
+      let input = document.getElementById('rosterCSV');
+      
+      console.log(input.files[0]);
+
+      const reader = new FileReader();
+            
+      reader.addEventListener('load', function (e) {
+          console.log('me here too')
+          let csvdata = e.target.result;
+          const italianForm = document.getElementById('italian-csv') 
+          const hiddenCSVString = document.getElementById('hiddenCSVString');
+          const hiddenRosterLabel = document.getElementById('hiddenRosterLabel');
+          const hiddenAssistantEmails = document.getElementById('hiddenAssistantEmails');
+          hiddenCSVString.value = csvdata;
+          hiddenRosterLabel.value = document.getElementById('titleInputFile').value;
+          hiddenAssistantEmails.value = document.getElementById('assistantEmailInputFile').value;
+          console.log(hiddenCSVString.value)
+          italianForm.submit();
+          //parseCsv.getParsecsvdata(csvdata); // calling function for parse csv data 
+      });
+      await reader.readAsBinaryString(input.files[0]);
+      console.log('me here')
+    }
+    form.addEventListener('submit', submitHandler)
+  
+</script>
+
+<br><br>
+
+<h1>Create New Roster Manually:</h1>
+
+<form id="create-roster-form" method="POST" action="/rosters/createManualRoster">
+  <label id="rosterLabel" for="titleInput">Title:</label><br>
+  <input type="text" placeholder="Roster Name" id="titleInput" name="titleInput" required><br>
+
+  <label id="studentLabel" for="studentEmailInput">Student Emails (separated by commas):</label><br>
+  <input type="email" placeholder="student@stevens.edu" id="studentEmailInput" name="studentEmailInput" pattern=".+@stevens\.edu" multiple required><br>
+
+  <label id="assistantLabel" for="assistantEmailInput">Assistants:</label><br>
+  <input type="email" placeholder="assistant@stevens.edu" id="assistantEmailInput" name="assistantEmailInput" pattern=".+@stevens\.edu" multiple><br>
+  
+  <button type="submit" id="submit">Submit</button>
+</form>

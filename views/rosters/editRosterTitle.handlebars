@@ -1,0 +1,8 @@
+<h1>Edit Title for {{rosterLabel}}</h1>
+
+<form id="edit-roster-form" method="POST" action="/rosters/edit/title/{{rosterId}}">
+  <input type="hidden" name="_method" value="PATCH">
+  <label id="rosterLabel" for="titleInput">Title:</label><br>
+  <input type="text" placeholder="New Name" id="titleInput" name="titleInput" required><br>
+  <button type="submit" id="submit">Submit</button>
+</form>

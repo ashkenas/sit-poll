@@ -1,0 +1,8 @@
+<h1>Remove '{{studentEmail}}' from '{{rosterLabel}}'?</h1>
+
+<form id="remove-student-form" method="POST" action="/rosters/edit/{{rosterId}}/remove/{{studentEmail}}">
+  <input type="hidden" name="_method" value="PATCH">
+  <button id="removeStudent" type="submit">Remove</button>
+</form>
+
+<a href="/rosters" class="updateRoster">Cancel</a>

@@ -1,0 +1,8 @@
+<h1>Remove '{{auth}}' status from '{{email}}'?</h1>
+
+<form id="remove-auth-form" method="POST" action="/admin/remove/{{auth}}/{{email}}">
+  <input type="hidden" name="_method" value="PATCH">
+  <button id="removeAuth" type="submit">Remove</button>
+</form>
+
+<a href="/admin" class="updateRoster">Cancel</a>
