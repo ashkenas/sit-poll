@@ -4,41 +4,6 @@ const { stringifyId, statusError, sync } = require("../helpers");
 const { requireId, requireInteger, requireOptions, requireDate, requireBoolean, requireString, validReactions } = require("../validation");
 const { getUserById } = require("./users");
 
-const updatePoll = async (poll_id, title, choices, close_date) =>{
-    poll_id = requireId(poll_id, "poll_id");
-    const poll = await getPollById(poll_id);
-    if(!poll)
-        throw 'Poll does not exist';
-    title = requireString(title, 'title');
-    if (title.length < 5)
-        throw 'Title must be at least 5 characters long.';
-    choices = requireOptions(choices, 'choices');
-    if (choices.length !== poll.choices.length)
-        throw 'Cannot change number of choices.';
-    close_date = requireDate(close_date, 'close_date').getTime();
-    if (close_date < Date.now())
-        throw 'Poll must close in the future.';
-
-    const pollCol = await polls();
-
-    const updateInfo = await pollCol.updateOne(
-        { _id: poll_id },
-        {
-            $set: {
-                title: title,
-                choices: choices,
-                close_date: close_date
-            }
-        }
-    );
-    
-    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
-        throw "Failed to updatep poll";
-
-    return { success: true };
-};
-
-
 const createPoll = async (title, choices, authorID, public, close_date, rosterId) =>{
     title = requireString(title, 'title');
     if (title.length < 5)
@@ -641,6 +606,40 @@ const deleteComment = async (commentId) => {
     );
     if (!res.acknowledged || !res.modifiedCount)
         throw 'Failed to delete comment.'
+};
+
+const updatePoll = async (poll_id, title, choices, close_date) =>{
+    poll_id = requireId(poll_id, "poll_id");
+    const poll = await getPollById(poll_id);
+    if(!poll)
+        throw 'Poll does not exist';
+    title = requireString(title, 'title');
+    if (title.length < 5)
+        throw 'Title must be at least 5 characters long.';
+    choices = requireOptions(choices, 'choices');
+    if (choices.length < 2)
+        throw 'Must provide at least 2 choices.';
+    close_date = requireDate(close_date, 'close_date').getTime();
+    if (close_date < Date.now())
+        throw 'Poll must close in the future.';
+
+    const pollCol = await polls();
+
+    const updateInfo = await pollCol.updateOne(
+        { _id: poll_id },
+        {
+            $set: {
+                title: title,
+                choices: choices,
+                close_date: close_date
+            }
+        }
+    );
+    
+    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
+        throw "Failed to updatep poll";
+
+    return { success: true };
 };
 
 module.exports = {

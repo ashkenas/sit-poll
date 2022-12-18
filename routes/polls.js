@@ -94,8 +94,8 @@ router
         if (close_date < Date.now())
             throw statusError(400, 'Close date must be in the future.');
 
-        if (choices.length !== poll.choices.length)
-            throw statusError(400, 'Cannot change number of options.');
+        if (choices.length < 2)
+            throw statusError(400, 'Must have at least 2 choices.');
         
         if (title.length < 5)
             throw statusError(400, 'Title must be at least 5 characters long.');
@@ -124,41 +124,13 @@ router
     .route('/:id/edit')
     .get(sync(async (req, res) => { // Edit page for poll
         const poll = await getPollById(req.params.id);
-        //console.log(requireId(req.session.userId, "id"));
-        //console.log(poll.author);
-        const user_id = requireId(req.session.userId, "id");
-        const poll_author = requireId(poll.author, "poll author");
-        //console.log(user_id);
-        //console.log(poll_author);
-        if (!user_id.equals(poll_author)){throw statusError(403, "You may not edit a poll you did not create");}
-        //console.log(poll.votes.length);
-        if (poll.votes.length > 0){throw statusError(403, 'You may not edit the poll after the first vote is cast');}
-        //console.log(poll);
+        if (req.session.userId !== poll.author.toString())
+            throw statusError(403, "You may not edit a poll you did not create");
+        if (poll.votes.length > 0)
+            throw statusError(403, 'You may not edit the poll after the first vote is cast');
 
-        var choices = poll.choices;
-        var poll_choices = [];
-        var counter = 1;
-        for (var choice of choices){
-            poll_choices.push({
-                number: counter,
-                choice: choice
-            })
-            counter+=1;
-        }
-        console.log(poll_choices);
-        const poll_id = poll._id;
-        const poll_title = poll.title;
-        //const poll_choices = poll.choices;
-        const poll_close_date = poll.close_date;
-        //const poll_posted_date = poll.posted_date;
-        const poll_opCounter = counter;
-        //add optionCounter as passed variable. optionCounter = #options
         res.render("polls/pollEdit", {
-            id: poll_id,
-            title: poll_title,
-            choices: poll_choices,
-            close_date: poll_close_date,
-            opCounter: poll_opCounter
+            poll: poll
         });
     }));
 

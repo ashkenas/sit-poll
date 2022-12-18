@@ -3,10 +3,11 @@
         <h1 class="title is-1">Results</h1>
         <div class="buttons">
             {{#if session.manager}}
-                <a class="button is-info" href="/polls/{{poll._id}}/metrics">Metrics</a>
+                <a class="button" href="/polls/{{poll._id}}/edit">Edit</a>
+                <a class="button is-link" href="/polls/{{poll._id}}/metrics">Metrics</a>
             {{/if}}
             {{#if (or session.admin self)}}
-                <button id="delete-button" class="button is-danger">Delete</a>
+                <button id="delete-button" class="button is-danger has-text-black">Delete</a>
             {{/if}}
         </div>
         <h2 class="title">{{poll.title}}</h1>
