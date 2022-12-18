@@ -111,7 +111,7 @@ router
     .route('/edit/title/:rosterId')
     .get(sync(async (req, res) => { // Render form to edit a roster title
       req.params.rosterId = requireId(req.params.rosterId);
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
 
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
@@ -127,7 +127,7 @@ router
     }))
     .patch(sync(async (req, res) => { 
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
 
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
@@ -149,7 +149,7 @@ router
     .route('/edit/add/:rosterId')
     .get(sync(async (req, res) => { // Render form to add people to a roster
       req.params.rosterId = requireId(req.params.rosterId);
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
 
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
@@ -166,7 +166,7 @@ router
     .patch(sync(async (req, res) => { 
       
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
 
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
@@ -192,7 +192,7 @@ router
     .get(sync(async (req, res) => { // Render form to remove student from a roster
       req.params.studentEmail = requireEmail(req.params.studentEmail, 'student email');
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
 
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
@@ -210,7 +210,7 @@ router
     }))
     .patch(sync(async (req, res) => { 
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
           status: 403,
@@ -233,7 +233,7 @@ router
     .route('/delete/:rosterId')
     .get(sync(async (req, res) => {
       req.params.rosterId = requireId(req.params.rosterId);
-      const roster = await getRosterById(req.params.rosterId);
+      const roster = await getRosterById(req.session.userId, req.params.rosterId);
       if(!(req.session.manager || req.session.admin)) {
         return res.status(13).render('error', {
           status: 403,

@@ -12,8 +12,12 @@ const checkOwnership = async (userId, rosterId) => {
     {"rosters._id": rosterId}
   );
 
-  if(!userWithRoster._id.equals(userId)) {
-    throw statusError(401, `Roster cannot be edited by current user`);
+  console.log(userWithRoster._id);
+  console.log(userId);
+  console.log((userWithRoster._id).equals(userId))
+
+  if(!(userWithRoster._id).equals(userId)) {
+    throw statusError(403, `Roster cannot be edited by current user`);
   }
 
   return true;
@@ -28,13 +32,16 @@ const getRostersByUserId = async (userId) => {
 };
 
 // return roster associated with a given roster id
-const getRosterById = async (rosterId) => {
+const getRosterById = async (userId, rosterId) => {
+  userId = requireId(userId, 'user id');
   rosterId = requireId(rosterId, 'roster id');
   const usersCol = await users();
   const user = await usersCol.findOne(
     {'rosters._id': rosterId},
     {projection: {"rosters.$": true}}
   );
+
+  await checkOwnership(userId, rosterId);
 
   if(user) {
     return user.rosters[0];
@@ -102,6 +109,7 @@ const createRoster = async (userId, label, students, assistants) => {
 // return object indicating roster was removed successfully, else throw error
 const deleteRoster = async (rosterId) => {
   rosterId = requireId(rosterId, 'roster id');
+  await checkOwnership(userId, rosterId);
 
   const usersCol = await users();
 
@@ -129,11 +137,11 @@ const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
   emailArray = requireEmails(emailArray, 'email');
   category = checkCategory(category, 'category');
 
-  checkOwnership(userId, rosterId);
+  await checkOwnership(userId, rosterId);
 
   const usersCol = await users();
 
-  const roster = await getRosterById(rosterId);
+  const roster = await getRosterById(userId, rosterId);
   let unadded = [];
 
   emailArray.forEach(async (email) => {
@@ -171,9 +179,9 @@ const removePersonFromRoster = async (userId, rosterId, studentEmail, category) 
   studentEmail = requireEmail(studentEmail, 'email');
   category = checkCategory(category, 'category');
 
-  checkOwnership(userId, rosterId);
+  await checkOwnership(userId, rosterId);
 
-  const roster = await getRosterById(rosterId);
+  const roster = await getRosterById(userId, rosterId);
   if(!roster.students.includes(studentEmail) && !roster.assistants.includes(studentEmail)) {
     throw statusError(404, `${studentEmail} is not in this roster`);
   }
@@ -199,7 +207,7 @@ const updateRosterLabel = async (userId, rosterId, label) => {
   label = requireString(label, 'roster label');
   const usersCol = await users();
   
-  checkOwnership(userId, rosterId);
+  await checkOwnership(userId, rosterId);
 
   const updatedInfo = await usersCol.updateOne(
     {_id: userId, 'rosters._id': rosterId},
