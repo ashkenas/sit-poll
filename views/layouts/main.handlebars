@@ -21,6 +21,16 @@
                         </a>
                     {{/if}}
                 </div>
+                <div class="navbar-end">
+                    {{#if session.userId}}
+                        <a class="navbar-item" href="/change-password">
+                            Change Password
+                        </a>
+                        <a class="navbar-item" href="/logout">
+                            Log Out
+                        </a>
+                    {{/if}}
+                </div>
             </div>
         </nav>
         <main>

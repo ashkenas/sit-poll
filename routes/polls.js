@@ -27,8 +27,7 @@ router
         });
     }))
     .post(validate(
-        ['title', 'choices', 'close_date'],
-        { roster: requireId }
+        ['title', 'choices', 'close_date']
     ), sync(async (req, res) => { // Create poll
         const close_date = req.body.close_date.getTime();
         if (close_date < Date.now())
@@ -37,6 +36,8 @@ router
             throw statusError(400, 'Poll must have at least 2 options.');
         if (req.body.title.length < 5)
             throw statusError(400, 'Title must be at least 5 characters long');
+        if (req.body.roster)
+            requireId(req.body.roster, 'roster');
 
         const stat = await createPoll(
             req.body.title,

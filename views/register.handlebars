@@ -40,7 +40,9 @@
             <div class="field">
                 <label class="label" for="year">Class Year</label>
                 <div class="control">
-                    <select class="select" id="year" name="class_year"></select>
+                    <select class="select" id="year" name="class_year">
+                        <option value="0">Not Enrolled</option>
+                    </select>
                 </div>
             </div>
             <div class="field">
@@ -69,7 +71,7 @@
             </div>
             <div class="buttons">
                 <input class="button is-link" type="submit" value="Register">
-                <a href="/login" class="button is-primary">I have an account</a>
+                <a href="/login" class="button">I have an account</a>
             </div>
         </form>
     </div>
@@ -99,15 +101,15 @@
         showEmailError();   
         if(password === "")
             return showPassError('A password must be provided.');
-        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
-            return showPassError('Password must be at least six characters and contain an uppercase letter, a digit, and a special character.');
+        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g) || password.match(/\s/g))
+            return showPassError('Password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.');
         showPassError();
 
         const display_name = formData.get('display_name');
         if(display_name.length < 2)
             return showNameError('Display name must be at least 2 characters long.');
-        if(display_name.match(/[^a-z.'\-]/i))
-            return showNameError('Display name can only contain letters, periods, and apostrophes.');
+        if(display_name.match(/[^a-z.'\- ]/i))
+            return showNameError('Display name can only contain letters, periods, spaces, and apostrophes.');
         showNameError();
 
         const date_of_birth = new Date(formData.get('date_of_birth'));

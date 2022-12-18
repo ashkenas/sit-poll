@@ -54,7 +54,8 @@ const createPoll = async (title, choices, authorID, public, close_date, rosterId
     close_date = requireDate(close_date, 'close_date').getTime();
     if (close_date < Date.now())
         throw 'Poll must close after current date.';
-    rosterId = requireId(rosterId, 'rosterId');
+    if (rosterId)
+        rosterId = requireId(rosterId, 'rosterId');
 
     const id = ObjectId();
     const new_poll = {
@@ -76,15 +77,17 @@ const createPoll = async (title, choices, authorID, public, close_date, rosterId
     if (!pollInsertResult.acknowledged)
         throw 'Poll creation failed.';
 
-    const userCol = await users();
-
-    const updateInfo = await userCol.updateOne(
-        { rosters: { $elemMatch: { _id: rosterId } } },
-        { $push: { 'rosters.$.polls': id } }
-    );
+    if (rosterId) {
+        const userCol = await users();
     
-    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
-        throw 'Roster not found.';
+        const updateInfo = await userCol.updateOne(
+            { rosters: { $elemMatch: { _id: rosterId } } },
+            { $push: { 'rosters.$.polls': id } }
+        );
+        
+        if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
+            throw 'Roster not found.';
+    }
 
     return {
         success: true,
@@ -106,16 +109,19 @@ const pollExists = async (id) => {
 
 const deletePoll = async (poll_id) => {
     poll_id = requireId(poll_id);
-    if (!(await pollExists(poll_id)))
+    const poll = await getPollById(poll_id);
+    if (poll === null)
         throw 'Poll does not exist found.';
 
-    const userCol = await users();
-    const removePollFromRosterInfo = await userCol.updateOne(
-        { rosters: { $elemMatch: { polls: poll_id } } },
-        { $pull: {"rosters.$.polls": poll_id } }
-    );
-    if(!removePollFromRosterInfo.acknowledged || !removePollFromRosterInfo.modifiedCount)
-        throw 'Failed to remove poll from roster.';
+    if (!poll.public) {
+        const userCol = await users();
+        const removePollFromRosterInfo = await userCol.updateOne(
+            { rosters: { $elemMatch: { polls: poll_id } } },
+            { $pull: {"rosters.$.polls": poll_id } }
+        );
+        if(!removePollFromRosterInfo.acknowledged || !removePollFromRosterInfo.modifiedCount)
+            throw 'Failed to remove poll from roster.';
+    }
 
     const pollCol = await polls();
     const deletePollInfo = await pollCol.deleteOne({ _id: poll_id });
