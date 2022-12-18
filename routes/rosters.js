@@ -17,9 +17,9 @@ const { getRostersByUserId, getRosterById, createRoster, deleteRoster,
 const checkAuthorized = async (userId) => {
   userId = requireId(userId);
   const user = await getUserById(userId);
-  return true;
+  //return true;
   //todo: uncomment when we can authorize
-  //return (userId.manager && user.is_manager) || (userId.admin && user.is_admin);
+  return (userId.manager && user.is_manager) || (userId.admin && user.is_admin);
 }
 
 router
