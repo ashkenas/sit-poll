@@ -2,7 +2,7 @@ const e = require("express");
 const { ObjectId } = require("mongodb");
 const { users } = require("../config/mongoCollections");
 const { stringifyId, statusError } = require("../helpers");
-const { requireString, requireId, requireEmail, requireEmails } = require("../validation");
+const { requireString, requireId, requireEmail, requireEmails, checkCategory } = require("../validation");
 const { getUserByEmail } = require("./users");
 
 const checkOwnership = async (userId, rosterId) => {
@@ -62,7 +62,6 @@ const createRoster = async (userId, label, students, assistants) => {
   //todo: check for duplicate emails in students array
   students.forEach(async(studentEmail) => {
     studentEmail = requireEmail(studentEmail);
-    //const student = await usersCol.findOne({email: studentEmail});
     if(studentsToAdd.includes(studentEmail)) failedToAdd.push(studentEmail);
     else studentsToAdd.push(studentEmail);
   });
@@ -70,7 +69,6 @@ const createRoster = async (userId, label, students, assistants) => {
   const assistantsToAdd = [];
   //todo: check for valid assistants array
   assistants.forEach(async(assistantEmail) => {
-    //const assistant = await usersCol.findOne({email: assistantEmail});
     if(assistantsToAdd.includes(assistantEmail) || studentsToAdd.includes(assistantEmail)) failedToAdd.push(assistantEmail);
     else assistantsToAdd.push(assistantEmail);
   });
@@ -129,11 +127,7 @@ const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
   userId = requireId(userId, 'user id');
   rosterId = requireId(rosterId, 'roster id');
   emailArray = requireEmails(emailArray, 'email');
-  category = requireString(category, 'category').trim().toLowerCase();
-
-  if (category !== 'students' && category !== 'assistants')
-  // todo: double check what error should be thrown here
-    throw statusError(400, `${category || "category"} is undefined`);
+  category = checkCategory(category, 'category');
 
   checkOwnership(userId, rosterId);
 
@@ -175,14 +169,9 @@ const removePersonFromRoster = async (userId, rosterId, studentEmail, category) 
   rosterId = requireId(rosterId, 'roster id');
   userId = requireId(userId, 'user id');
   studentEmail = requireEmail(studentEmail, 'email');
-  category = requireString(category, 'category').trim();
+  category = checkCategory(category, 'category');
 
   checkOwnership(userId, rosterId);
-
-  const student = await getUserByEmail(studentEmail);
-  if(student === null) {
-    throw statusError(404, `${studentEmail} does not exist`);
-  }
 
   const roster = await getRosterById(rosterId);
   if(!roster.students.includes(studentEmail) && !roster.assistants.includes(studentEmail)) {
@@ -200,7 +189,7 @@ const removePersonFromRoster = async (userId, rosterId, studentEmail, category) 
     throw statusError(500, `Error: could not remove ${studentEmail || "student"} from roster successfully`);
   }
 
-  return {addedToRoster: 'true'};
+  return {removedFromRoster: 'true'};
 };
 
 // return roster that has been updated with label
@@ -213,7 +202,6 @@ const updateRosterLabel = async (userId, rosterId, label) => {
   checkOwnership(userId, rosterId);
 
   const updatedInfo = await usersCol.updateOne(
-    //{_id: userWithRoster._id},
     {_id: userId, 'rosters._id': rosterId},
     {$set: {"rosters.$.label": label}}
   );

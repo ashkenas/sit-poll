@@ -1,15 +1,29 @@
 <div class="section">
-    <h1>This is the View Polls Page. Enjoy your polls, just don't dance on them</h1><br><br>
-    {{#each polls}}
-        <div>
-            <p>{{title}}</p>
-            <p>By {{author}}</p>
-            <p>available until {{close_date}}</p>
-            <br><br>
-        </div>
-    {{/each}}
-
-
-
-
+    <div class="container is-max-desktop">
+        <h1 class="title">Polls</h1>
+        {{#each polls}}
+            <section class="poll-listing" data-href="/polls/{{_id}}">
+                <h2 class="title is-3 poll-title">{{title}}</h2>
+                <div class="level subtitle">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <p class="subtitle is-5">By {{author}}</p>
+                        </div>
+                    </div>
+                    <div class="level-left">
+                        <div class="level-item">
+                            <p class="subtitle is-5">Closes on {{closeDate close_date}}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {{/each}}
+    </div>
 </div>
+<script>
+document.querySelectorAll('.poll-listing').forEach(poll => {
+    poll.addEventListener('click', (event) => {
+        window.location = poll.getAttribute('data-href');
+    });
+});
+</script>

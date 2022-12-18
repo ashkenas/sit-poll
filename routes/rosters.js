@@ -1,6 +1,7 @@
 const express = require('express');
 const xss = require('xss');
-const { validate, requireOptions, requireString, requireId, requireEmail, requireEmails } = require('../validation');
+const Papa = require('papaparse');
+const { validate, checkCategory, requireString, requireId, requireEmail, requireEmails } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
@@ -55,6 +56,67 @@ router
           message: "Unauthorized to access this page"
         });
       }
+      let {hiddenRosterLabel, hiddenCSVString, hiddenAssistantEmails} = req.body;
+      
+      //todo: xss
+      xss(hiddenRosterLabel);
+      xss(hiddenCSVString);
+      xss(hiddenAssistantEmails);
+      try {
+        hiddenRosterLabel = requireString(hiddenRosterLabel, 'Title');
+        hiddenCSVString = requireString(hiddenCSVString, 'CSV Upload');
+        if(!hiddenAssistantEmails) {
+          hiddenAssistantEmails = [];
+        } else {
+          hiddenAssistantEmails = requireEmails(hiddenAssistantEmails.split(','), 'Assistant Emails');
+        }
+
+        const parsed = Papa.parse(hiddenCSVString);
+        if(parsed.errors.length > 0) throw statusError(400, 'Cannot parse uploaded file');
+
+        const emailIndex = parsed.data[0].indexOf('SIS Login ID');
+        if(emailIndex === -1) throw statusError(400, 'Not a Stevens CSV file');
+        let studentEmails = parsed.data.map((student) => {
+          try {
+            return requireEmail(student[emailIndex]);
+          } catch (e) {
+            return null;
+          }
+        });
+
+        studentEmails = studentEmails.filter((email) => {
+          return email !== null;
+        })
+        
+        const updatedUser = await createRoster(req.session.userId, hiddenRosterLabel, studentEmails, hiddenAssistantEmails);
+        return res.redirect('/rosters');
+      } catch (e) {
+        return res.status(e.status).render('error', {
+          status: e.status,
+          message: e.message
+        });
+      }  
+    }));
+
+router
+    .route('/createManualRoster')
+    .get(sync(async (req, res) => { // Render form to create a roster
+      if(await checkAuthorized(req.session.userId)) {
+        return res.render('rosters/createRoster');
+      } else {
+        return res.status(401).render('error', {
+          status: 401,
+          message: "Unauthorized to access this page"
+        });
+      }
+    }))
+    .post(sync(async (req, res) => { // Create roster
+      if(!(await checkAuthorized(req.session.userId))) {
+        return res.status(401).render('error', {
+          status: 401,
+          message: "Unauthorized to access this page"
+        });
+      }
       let {titleInput, studentEmailInput, assistantEmailInput} = req.body;
       //todo: xss
       xss(titleInput);
@@ -80,7 +142,7 @@ router
 
 router
     .route('/edit/title/:rosterId')
-    .get(sync(async (req, res) => { // Render form to create a roster
+    .get(sync(async (req, res) => { // Render form to edit a roster title
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
 
@@ -125,7 +187,7 @@ router
 
 router
     .route('/edit/add/:rosterId')
-    .get(sync(async (req, res) => { // Render form to create a roster
+    .get(sync(async (req, res) => { // Render form to add people to a roster
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
 
@@ -159,7 +221,7 @@ router
       xss(category);
       studentEmailInput = requireString(studentEmailInput, 'Email(s)');
       studentEmailInput = requireEmails(studentEmailInput.split(','), 'Email(s)');
-      category = requireString(category, 'category');
+      category = checkCategory(category, 'category');
 
       try {
         const updatedRoster = await addPersonToRoster(req.session.userId, req.params.rosterId, studentEmailInput, category);
@@ -174,7 +236,7 @@ router
 
 router
     .route('/edit/:rosterId/remove/:studentEmail')
-    .get(sync(async (req, res) => { // Render form to create a roster
+    .get(sync(async (req, res) => { // Render form to remove student from a roster
       req.params.studentEmail = requireEmail(req.params.studentEmail, 'student email');
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);

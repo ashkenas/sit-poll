@@ -76,15 +76,7 @@ const requireEmails = (emails, name) => {
     exists(emails, name);
     emails = requireOptions(emails, name);
     return emails.map((email) => {
-        if(email.trim().toLowerCase().endsWith('@stevens.edu')) {
-            const handle = email.substring(0, email.length - '@stevens.edu'.length + 1);
-            if(!/[a-zA-Z0-9.]/.test(handle)) {
-                throw statusError(400, `${email} is not a valid email`);
-            }
-        } else {
-            throw statusError(400, `${email} is not a valid email`);
-        }
-        return email.trim().toLowerCase();
+        return requireEmail(email);
     });
 }
 
@@ -97,8 +89,18 @@ const requireEmail = (email, name) => {
         if(!/[a-zA-Z0-9.]/.test(handle)) {
             throw statusError(400, `${email} is not a valid email`);
         }
+    } else {
+        throw statusError(400, `${email} is not a valid email`);
     }
     return email.trim().toLowerCase();
+}
+
+const checkCategory = (category, name) => {
+    exists(category, name);
+    category = requireString(category).toLowerCas();
+    if (category !== 'students' && category !== 'assistants')
+        throw statusError(400, `${category || "category"} is undefined`);
+    return category;
 }
 
 const dataTypes = {
@@ -173,6 +175,7 @@ const validReactions = {
 };
 
 module.exports = {
+    checkCategory,
     requireBoolean,
     requireDate,
     requireEmail,
