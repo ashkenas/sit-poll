@@ -1,7 +1,7 @@
 const express = require('express');
 const { getUserByEmail, createUser, getUserById } = require('../data/users');
 const { validate, validMajors, validSchools, validGenders } = require('../validation');
-const { updatePassword, updateDisplayName, updateGender } = require('../data/editProfile');
+const { updatePassword, updateDisplayName, updateGender, updateMajorAndSchool } = require('../data/editProfile');
 const { sync, statusError } = require('../helpers');
 const router = express.Router();
 
@@ -19,30 +19,6 @@ router
             school: user.school
         });
     }))
-
-router
-    .route('/changePassword/:id')
-    .get(sync(async (req, res) => {
-        const user = await getUserById(req.session.userId);
-        console.log('hey')
-        res.render('profile/editPassword');
-    }))
-    .post(validate(['password']), sync(async (req, res) => { // Validate credentials (TODO: Not present?), setup session
-        const password = req.body.password;
-        if(password.length < 6 || !password.match(/[A-Z]/g) || !password.match(/\d/g) || !password.match(/[!-\/:-@\[-`]/g))
-            throw statusError(400, "Password must be at least six characters and contain an uppercase letter, a digit, and a special character.");
-
-        const user = await getUserById(req.session.userId); 
-
-        const result = await updatePassword(req.session.userId, password);
-
-        if(result.updatedUser) {
-            // Redirect
-            res.redirect('/editProfile');
-        } else {
-            throw statusError(500, "Internal server error.");
-        }
-    }));
 
 router
     .route('/changeDisplayName/:id')
@@ -81,7 +57,6 @@ router
         });
     }))
     .post(validate(['gender']), sync(async (req, res) => { // Validate credentials (TODO: Not present?), setup session
-        console.log('change gender');
         const gender = req.body.gender;
         
         const user = await getUserById(req.session.userId);
@@ -90,7 +65,36 @@ router
 
         if(result.updatedUser) {
             // Redirect
-            console.log('updated');
+            res.redirect('/editProfile');
+        } else {
+            throw statusError(500, "Internal server error.");
+        }
+    }));
+
+router
+    .route('/changeMajor/:id')
+    .get(sync(async (req, res) => {
+        const user = await getUserById(req.session.userId);
+        res.render('profile/editMajor', {
+            id: req.session.userId,
+            majors: validMajors,
+            schools: validSchools
+        });
+    }))
+    .post(validate(['major', 'school']), sync(async (req, res) => { // Validate credentials (TODO: Not present?), setup session
+        const major = req.body.major;
+        const school = req.body.school;
+        
+        const user = await getUserById(req.session.userId);
+
+        if (user.major === major) {
+            throw `User already a ${major} major`;
+        }
+
+        const result = await updateMajorAndSchool(req.session.userId, major, school);
+
+        if(result.updatedUser) {
+            // Redirect
             res.redirect('/editProfile');
         } else {
             throw statusError(500, "Internal server error.");

@@ -1,0 +1,37 @@
+<section class="section">
+    <div class="container is-max-dekstop">
+        <h1 class="title">Change Major/School</h1>
+        <form id="major-form" method="post">
+            <div class="field">
+                <label class="label" for="major">Major</label>
+                <div class="control">
+                    <select class="select" id="major" name="major">
+                        {{#each majors}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="school">School/College</label>
+                <div class="control">
+                    <select class="select" id="school" name="school">
+                        {{#each schools}}<option value="{{this}}">{{this}}</option>{{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Change">
+                <a href="/editProfile" class="button">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+<script>
+    
+    handleForm('major-form', 'POST', '/editProfile/changeMajor/' + {{id}}, (formData) => {
+        
+        return {
+            major: formData.get('major'),
+            school: formData.get('school')
+        };
+    });
+</script>

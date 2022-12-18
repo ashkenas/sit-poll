@@ -2,9 +2,6 @@
     <div class="container is-max-dekstop">
         <h1 class="title">Edit Profile</h1>
             <div class="field">
-                <a href="/editProfile/changePassword/{{id}}" class="updateRoster">Change password</a>
-            </div>
-            <div class="field">
                 <p for="display_name" class="label">Display Name:</p>
                 <p>{{displayName}}</p>
                 <a href="/editProfile/changeDisplayName/{{id}}" class="updateRoster">Change name</a>
@@ -23,14 +20,9 @@
                 <a href="/editProfile/changeGender/{{id}}" class="updateRoster">Change gender</a>
             </div>
             <div class="field">
-                <p class="label" for="major">Major:</p>
-                <p>{{major}}</p>
+                <p class="label" for="major">Major, School/College:</p>
+                <p>{{major}}, {{school}}</p>
                 <a href="/editProfile/changeMajor/{{id}}" class="updateRoster">Change major</a>
-            </div>
-            <div class="field">
-                <p class="label" for="school">School/College:</p>
-                <p>{{school}}</p>
-                <a href="/editProfile/changeSchool/{{id}}" class="updateRoster">Change school</a>
             </div>
     </div>
 </section>
