@@ -8,25 +8,17 @@ const data = require('../data');
 const { getUserById, getUserByEmail } = data.users;
 const { getAdmins, getManagers, addAuth, removeAuth } = data.admin;
 
-const checkAuthorized = async (userId) => {
-  userId = requireId(userId);
-  const user = await getUserById(userId);
-  //return true;
-  //todo: uncomment when we can authorize
-  return (userId.admin && user.is_admin);
-}
-
 router
     .route('/')
     .get(sync(async (req, res) => { // View rosters
-      if(await checkAuthorized(req.session.userId)) {
+      if(req.session.admin) {
         return res.render('admin/displayAuthorizations', {
           managers: await getManagers(),
           admins: await getAdmins()
         });
       } else {
-        return res.status(401).render('error', {
-          status: 401,
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -34,11 +26,11 @@ router
 
 router
     .route('/add/:auth')
-    .get(sync(async (req, res) => { // Render form to create a roster
+    .get(sync(async (req, res) => { // Render form to add an authorized person
       req.params.auth = requireString(req.params.auth);
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!req.session.admin) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -55,9 +47,9 @@ router
     }))
     .patch(sync(async (req, res) => {
       req.params.auth = requireString(req.params.auth);
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!req.session.admin) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -85,18 +77,17 @@ router
           message: e.message
         })
       }
-      //const user = await getUserById(req.session.userId);
       return res.redirect('/admin');
     }));
 
 router
     .route('/remove/:auth/:userEmail')
-    .get(sync(async (req, res) => { // Render form to create a roster
+    .get(sync(async (req, res) => { // Render form to remove authorization from a person
       req.params.auth = requireString(req.params.auth);
       req.params.userEmail = requireEmail(req.params.userEmail);
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!req.session.admin) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -116,9 +107,9 @@ router
     .patch(sync(async (req, res) => {
       req.params.auth = requireString(req.params.auth);
       req.params.userEmail = requireEmail(req.params.userEmail);
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!req.session.admin) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }

@@ -14,24 +14,16 @@ const { getRostersByUserId, getRosterById, createRoster, deleteRoster,
 
 // todo: double check error throwing and xss calls
 
-const checkAuthorized = async (userId) => {
-  userId = requireId(userId);
-  const user = await getUserById(userId);
-  //return true;
-  //todo: uncomment when we can authorize
-  return (userId.manager && user.is_manager) || (userId.admin && user.is_admin);
-}
-
 router
     .route('/')
     .get(sync(async (req, res) => { // View rosters
-      if(await checkAuthorized(req.session.userId)) {
+      if(req.session.is_manager || req.session.is_admin) {
         return res.render('rosters/displayRosters', {
           rosters: await getRostersByUserId(req.session.userId)
         });
       } else {
-        return res.status(401).render('error', {
-          status: 401,
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -40,19 +32,19 @@ router
 router
     .route('/createRoster')
     .get(sync(async (req, res) => { // Render form to create a roster
-      if(await checkAuthorized(req.session.userId)) {
+      if(req.session.is_manager || req.session.is_admin) {
         return res.render('rosters/createRoster');
       } else {
-        return res.status(401).render('error', {
-          status: 401,
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
     }))
     .post(sync(async (req, res) => { // Create roster
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -101,19 +93,19 @@ router
 router
     .route('/createManualRoster')
     .get(sync(async (req, res) => { // Render form to create a roster
-      if(await checkAuthorized(req.session.userId)) {
+      if(req.session.is_manager || req.session.is_admin) {
         return res.render('rosters/createRoster');
       } else {
-        return res.status(401).render('error', {
-          status: 401,
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
     }))
     .post(sync(async (req, res) => { // Create roster
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -146,9 +138,9 @@ router
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
 
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -162,9 +154,9 @@ router
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
 
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -191,9 +183,9 @@ router
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
 
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -208,9 +200,9 @@ router
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
 
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -241,9 +233,9 @@ router
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
 
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -258,9 +250,9 @@ router
     .patch(sync(async (req, res) => { 
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await getRosterById(req.params.rosterId);
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -288,9 +280,9 @@ router
     .get(sync(async (req, res) => {
       req.params.rosterId = requireId(req.params.rosterId);
       const roster = await getRosterById(req.params.rosterId);
-      if(!(await checkAuthorized(req.session.userId))) {
+      if(!(req.session.is_manager || req.session.is_admin)) {
         return res.status(13).render('error', {
-          status: 401,
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
@@ -306,9 +298,9 @@ router
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
       const roster = await deleteRoster(req.params.rosterId);
 
-      if(!(await checkAuthorized(req.session.userId))) {
-        return res.status(401).render('error', {
-          status: 401,
+      if(!(req.session.is_manager || req.session.is_admin)) {
+        return res.status(403).render('error', {
+          status: 403,
           message: "Unauthorized to access this page"
         });
       }
