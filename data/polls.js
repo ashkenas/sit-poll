@@ -5,7 +5,6 @@ const { requireId, requireInteger, requireOptions, requireDate, requireBoolean, 
 const { getUserById } = require("./users");
 
 const updatePoll = async (poll_id, title, choices, close_date) =>{
-    
     poll_id = requireId(poll_id, "poll_id");
     const poll = await getPollById(poll_id);
     if(!poll)
@@ -14,33 +13,30 @@ const updatePoll = async (poll_id, title, choices, close_date) =>{
     if (title.length < 5)
         throw 'Title must be at least 5 characters long.';
     choices = requireOptions(choices, 'choices');
-    if (choices.length < 2)
-        throw 'Must provide at least 2 choices';
-    close_date = requireDate(close_date, 'poll close date');
+    if (choices.length !== poll.choices.length)
+        throw 'Cannot change number of choices.';
+    close_date = requireDate(close_date, 'close_date').getTime();
     if (close_date < Date.now())
-        throw 'Poll must close after current date.';
-
-    let closed = new Date(close_date);
+        throw 'Poll must close in the future.';
 
     const pollCol = await polls();
 
     const updateInfo = await pollCol.updateOne(
-        {"_id": poll_id},
-        {$set: {
-            "title": title,
-            "choices": choices,
-            "close_date": closed
-             }})
+        { _id: poll_id },
+        {
+            $set: {
+                title: title,
+                choices: choices,
+                close_date: close_date
+            }
+        }
+    );
     
-    if (!updateInfo.acknowledged || !updateInfo.modifiedCount) {throw "Poll edit failed";}
+    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
+        throw "Failed to updatep poll";
 
-    retval = {
-        status: "success",
-        poll_Id: poll_id
-    }
-    return retval;
-
-}
+    return { success: true };
+};
 
 
 const createPoll = async (title, choices, authorID, public, close_date, rosterId) =>{

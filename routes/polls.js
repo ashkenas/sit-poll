@@ -1,13 +1,11 @@
 const express = require('express');
-const { requireId, requireDate, requireString, validate, validReactions, requireOptions } = require('../validation');
+const { requireId, validate, validReactions } = require('../validation');
 const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
 const { getUserById } = data.users;
 const { addComment, getPollById, createPoll, updatePoll, deletePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
-
-const notImplemented = (res) => res.status(502).send({ error: 'Not implemented.' });
 
 // Automatically 404/3s for all poll-specific routes if necessary
 router.use('/:id', requirePoll('id'));
@@ -95,9 +93,12 @@ router
         if (title.length < 5)
             throw statusError(400, 'Title must be at least 5 characters long.');
 
-        const stat = await updatePoll(poll_id, title, choices, close_date);
+        const stat = await updatePoll(req.params.id, title, choices, close_date);
         //check if update is successful
-        if (stat.status === "success") {res.json({redirect: `/polls/${stat.poll_Id}/results`});}
+        if (stat.success)
+            res.json({ redirect: `/polls/${req.params.id.toString()}/results` });
+        else
+            throw statusError(500, 'Failed to update poll.');
     }))
     .delete(sync(async (req, res) => { // Delete poll
         const poll = await getPollById(req.params.id);
