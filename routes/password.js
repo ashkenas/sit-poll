@@ -2,10 +2,8 @@ const express = require('express')
 const router = express.Router();
 const bcrypt = require('bcryptjs')
 const {validate, requireString} = require('../validation');
-const { getUserById } = require('../data/users');
-const { statusError, sync, hashPassword } = require('../helpers');
-const { users } = require("../config/mongoCollections");
-const { ObjectId } = require('mongodb')
+const { getUserById, changePassword } = require('../data/users');
+const { statusError, sync } = require('../helpers');
 
 router
     .route('/')
@@ -24,13 +22,8 @@ router
         if(password1 !== password2)
             throw statusError(400, "Your new passwords must match.")
 
-        const usersCol = await users();
-        const hash = await hashPassword(password1)
-        return await usersCol
-            .updateOne({_id: ObjectId(req.session.userId)}, {$set: {pass_hash: hash}})
-            .then(function () {
-                return res.json({redirect: '/logout'});
-            })
+        if((await changePassword(req.session.userId, old_password, password1, password2)).updatedUser)
+            return res.json({redirect: '/logout'});
     }));
 
 module.exports = router;
