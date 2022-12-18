@@ -20,7 +20,7 @@ router
         if(password1.length < 6 || !password1.match(/[A-Z]/g) || !password1.match(/\d/g) || !password1.match(/[!-\/:-@\[-`]/g) || password1.match(/\s/g))
             throw statusError(400, "New password must be at least six characters and contain no spaces, an uppercase letter, a digit, and a special character.");
         if(password1 !== password2)
-            throw statusError(400, "Your new passwords must match.")
+            throw statusError(400, "Retyped password does not match new password.")
 
         if((await changePassword(req.session.userId, old_password, password1, password2)).updatedUser)
             return res.json({redirect: '/logout'});
