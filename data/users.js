@@ -45,8 +45,8 @@ const createUser = async function (email, password, display_name, major, school,
         throw "Password must be at least six characters and contain an uppercase letter, a digit, and a special character.";
     if(display_name.length < 2)
         throw 'Display name must be at least 2 characters long.';
-    if(display_name.match(/[^a-z.'\-]/i))
-        throw 'Display name can only contain letters, periods, and apostrophes.';
+    if(display_name.match(/[^a-z.'\- ]/i))
+        throw 'Display name can only contain letters, periods, spaces, and apostrophes.';
     if(!validGenders.includes(gender))
         throw 'Invalid gender.';
     if(!validSchools.includes(school))

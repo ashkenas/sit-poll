@@ -106,8 +106,8 @@
         const display_name = formData.get('display_name');
         if(display_name.length < 2)
             return showNameError('Display name must be at least 2 characters long.');
-        if(display_name.match(/[^a-z.'\-]/i))
-            return showNameError('Display name can only contain letters, periods, and apostrophes.');
+        if(display_name.match(/[^a-z.'\- ]/i))
+            return showNameError('Display name can only contain letters, periods, spaces, and apostrophes.');
         showNameError();
 
         const date_of_birth = new Date(formData.get('date_of_birth'));

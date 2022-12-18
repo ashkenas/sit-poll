@@ -1,41 +1,15 @@
+/*
+ * Database seeding for testing.
+ */
 const { ObjectId } = require("mongodb");
 const { hashPassword } = require("../helpers");
 const { dbConnection, closeConnection } = require("../config/mongoConnection");
 const collections = require("../config/mongoCollections");
 
-/*
- * Database seeding for testing.
- */
-const users = [];
-
-const allMajors = {
-    "Computer Science": "Schaefer School of Engineering",
-    "Computer Engineering": "Schaefer School of Engineering",
-    "Chemical Engineering": "Schaefer School of Engineering",
-    "Mechanical Engineering": "Schaefer School of Engineering",
-    "Accounting": "School of Business",
-    "Finance": "School of Business",
-    "Economics": "School of Business",
-    "Engineering Management": "School of Systems",
-    "Software Engineering": "School of Systems",
-};
-
-const csMajor = { "Computer Science": "Schaefer School of Engineering" };
-
-const engineeringMajors = {
-    "Computer Engineering": "Schaefer School of Engineering",
-    "Chemical Engineering": "Schaefer School of Engineering",
-    "Mechanical Engineering": "Schaefer School of Engineering"
-};
-
-const randomMajor = (majors) => {
-    const keys = Object.keys(majors);
-    const major = keys[Math.floor(Math.random() * keys.length)];
-    return [major, majors[major]];
-};
+const users = [], polls = [];
 
 const User = async (email, password, name, major, school, gender, dob, class_year, admin, manager) => {
-    return {
+    const user = {
         _id: ObjectId(),
         email: email,
         pass_hash: await hashPassword(password),
@@ -49,20 +23,41 @@ const User = async (email, password, name, major, school, gender, dob, class_yea
         is_manager: manager,
         rosters: []
     };
+    users.push(user);
+    return user;
 };
+
+const dataToUsers = async (dataGroup) => {
+    for (let i = 0; i < dataGroup.length; i++) {
+        const user = dataGroup[i];
+        dataGroup[i] = await User(
+            user.email,
+            user.email.split('@')[0] + 'A1!',
+            `${user.first_name} ${user.last_name}`,
+            user.major,
+            user.school,
+            user.gender,
+            new Date(user.date_of_birth),
+            user.class_year,
+            false,
+            false
+        );
+    }
+    return dataGroup;
+}
 
 const Roster = (label, students, assistants) => {
     return {
         _id: ObjectId(),
         label: label,
-        students: students,
+        students: students.map(e => e.email),
         assistants: assistants,
         polls: []
     };
 };
 
 const Poll = (title, choices, author, public, posted, close) => {
-    return {
+    const poll = {
         _id: ObjectId(),
         title: title,
         choices: choices,
@@ -74,6 +69,8 @@ const Poll = (title, choices, author, public, posted, close) => {
         reactions: [],
         comments: []
     };
+    polls.push(poll);
+    return poll;
 };
 
 const Vote = (user, vote) => {
@@ -101,75 +98,152 @@ const Comment = (user, comment, date) => {
     };
 };
 
-const generateRoster = async (name, size, majors, s) => {
-    const students = [];
-    for (let i = 0; i < size; i++) {
-        const [major, school] = randomMajor(majors);
-        const dob = new Date(Math.floor(Math.random() * 4) + 2001, Math.floor(Math.random() * 12), Math.floor(Math.random() * 27));
-        const student = await User(`student${s+i}@stevens.edu`, `password${s+i}`, `Student ${s + i}`,
-            major, school, Math.random() > .5 ? 'F' : 'M', dob, dob.getFullYear() + 22, false, false);
-
-        users.push(student);
-        students.push(student.email);
-    }
-
-    return Roster(name, students, []);
+const populatePoll = (poll, roster, admin = false) => {
+    if (!admin)
+        roster.polls.push(poll._id);
+    roster.students.forEach(student => {
+        const user = users.find(user => user.email === student);
+        if (Math.random() < .8) {
+            poll.votes.push(Vote(user._id, Math.floor(Math.random() * poll.choices.length)));
+            if (Math.random() < .9)
+                poll.reactions.push(Reaction(user._id, Math.random() < .8 ? 'like' : 'dislike'));
+            if (Math.random() < .15)
+                poll.comments.push(Comment(user._id, `My favorite beep boop is beep boop #${Math.floor(Math.random()*10000)}`,
+                    Date.now() - Math.floor(Math.random() * 1000*60*60*24*2)));
+        }
+    });
 };
 
 const main = async () => {
     // Make an admin
     const admin = await User('admin@stevens.edu', 'pass1234', 'Admin', '', '', '', 0, 0, true, false);
+    // Load students
+    const cs2026 = await dataToUsers(require('../seed_data/cs2026.json'));
+    const cs2025 = await dataToUsers(require('../seed_data/cs2025.json'));
+    const cs2024 = await dataToUsers(require('../seed_data/cs2024.json'));
+    const cs2023 = await dataToUsers(require('../seed_data/cs2023.json'));
+    const eng2026 = await dataToUsers(require('../seed_data/eng2026.json'));
+    const eng2025 = await dataToUsers(require('../seed_data/eng2025.json'));
+    const eng2024 = await dataToUsers(require('../seed_data/eng2024.json'));
+    const eng2023 = await dataToUsers(require('../seed_data/eng2023.json'));
+    const business = await dataToUsers(require('../seed_data/business.json'));
+
     // Generate some rosters
-    const rAll1 = await generateRoster('All1', 100, allMajors, 1);
-    const rAll2 = await generateRoster('All2', 80, allMajors, 101);
-    const rCS1 = await generateRoster('CS1', 80, csMajor, 181);
-    rCS1.students.push(...rAll1.students.slice(0, 4));
-    const rCS2 = await generateRoster('CS2', 100, csMajor, 261);
-    rCS2.students.push(...rAll1.students.slice(2, 6));
-    rCS2.assistants.push(rCS1.students[0]);
-    const rEng1 = await generateRoster('Eng1', 100, engineeringMajors, 361);
-    rEng1.students.push(...rAll1.students.slice(6, 11));
-    const rEng2 = await generateRoster('Eng2', 40, engineeringMajors, 461);
-    rEng2.students.push(...rAll1.students.slice(9, 15));
-    const rEng3 = await generateRoster('Eng3', 50, engineeringMajors, 501);
-    rEng3.students.push(...rAll1.students.slice(13, 17));
+    const cs115a = Roster('CS 115-A', cs2026.slice(0, 100), []);
+    const cs115b = Roster('CS 115-B', cs2026.slice(100, 200), []);
+    const cs115c = Roster('CS 115-C', cs2026.slice(200, 300), []);
+    const cs284a = Roster('CS 284-A', cs2025.slice(0, 100), []);
+    const cs284b = Roster('CS 284-B', cs2025.slice(100, 200), []);
+    const cs284c = Roster('CS 284-C', cs2025.slice(200, 300), []);
+    const cs385a = Roster('CS 385-A', cs2024.slice(0, 100), []);
+    const cs385b = Roster('CS 385-B', cs2024.slice(100, 200), []);
+    const cs385c = Roster('CS 385-C', cs2024.slice(200, 300), []);
+    const cs546a = Roster('CS 546-A', cs2023.slice(0, 100), []);
+    const cs546b = Roster('CS 546-B', cs2023.slice(100, 200), []);
+    const cs546c = Roster('CS 546-C', cs2023.slice(200, 300), []);
+    const cal103 = Roster('CAL 103', [...cs2026, ...eng2026]);
+    const obi101 = Roster('Obituaries 101', [...cs2025, ...eng2025]);
+    const napping = Roster('Napping', [...cs2023, ...eng2023, ...business]);
+    const creative = Roster('Creative Writing', [...cs2026, ...cs2025, ...cs2024, ...cs2023, ...eng2026, ...eng2025, ...eng2024, ...eng2023, ...business]);
+    const accting = Roster('Accounting for Babies', [...business]);
+
     // Make some professors
-    const pAll = await User('bookworm@stevens.edu', 'i<3books', 'Dr. Book-Worm', '',
-        'College of Arts and Letters', 'M', new Date(1976, 5, 12), 0, false, true);
-    const pCS = await User('beepboop@stevens.edu', 'i<3webdev', 'Dr. Beep-Boop', '',
-        'Schaefer School of Engineering', 'F', new Date(1973, 2, 20), 0, false, true);
-    const pEng = await User('handyman@stevens.edu', 'i<3physics', 'Dr. Handyman', '',
-        'Schaefer School of Engineering', 'M', new Date(1978, 11, 4), 0, false, true);
-    // Give them some students
-    pAll.rosters = [rAll1, rAll2];
-    pCS.rosters = [rCS1, rCS2];
-    pEng.rosters = [rEng1, rEng2, rEng3];
+    const p115 = await User('beepboop@stevens.edu', 'Prof1!', 'Prof. Beepboop', 'N/A',
+        'Schaefer School of Engineering and Science', 'Male', new Date(1976, 5, 12), 0, false, true);
+    p115.rosters = [cs115a, cs115b, cs115c];
+    const p284 = await User('treeman@stevens.edu', 'Prof1!', 'Prof. Treeman', 'N/A',
+        'Schaefer School of Engineering and Science', 'Male', new Date(1974, 6, 12), 0, false, true);
+    p284.rosters = [cs284a, cs284b, cs284c];
+    const p385 = await User('happiness@stevens.edu', 'Prof1!', 'Prof. Happiness', 'N/A',
+        'Schaefer School of Engineering and Science', 'Male', new Date(1978, 6, 18), 0, false, true);
+    p385.rosters = [cs385a, cs385b, cs385c];
+    const p546 = await User('bigmound@stevens.edu', 'Prof1!', 'Prof. BigMound', 'N/A',
+        'Schaefer School of Engineering and Science', 'Male', new Date(1980, 3, 17), 0, false, true);
+    p546.rosters = [cs546a, cs546b, cs546c];
+    const p103 = await User('right@stevens.edu', 'Prof1!', 'Prof. Right', 'N/A',
+        'College of Arts and Letters', 'Male', new Date(1965, 2, 11), 0, false, true);
+    p103.rosters = [cal103];
+    const p101 = await User('morticia@stevens.edu', 'Prof1!', 'Prof. Morticia', 'N/A',
+        'College of Arts and Letters', 'Female', new Date(1964, 1, 4), 0, false, true);
+    p101.rosters = [obi101];
+    const pNap = await User('sleepy@stevens.edu', 'Prof1!', 'Prof. Sleepy', 'N/A',
+        'College of Arts and Letters', 'Female', new Date(1990, 7, 3), 0, false, true);
+    pNap.rosters = [napping];
+    const pWri = await User('essay@stevens.edu', 'Prof1!', 'Prof. SA', 'N/A',
+        'College of Arts and Letters', 'Female', new Date(1985, 3, 9), 0, false, true);
+    pWri.rosters = [creative];
+    const pAct = await User('quickmaf@stevens.edu', 'Prof1!', 'Prof. QuickMaf', 'N/A',
+        'College of Arts and Letters', 'Female', new Date(1981, 8, 3), 0, false, true);
+    pAct.rosters = [accting];
+
     // Make some polls
-    const pollCS = Poll("Should we do more beep boop?", ['Definitely', 'Yes', 'Maybe', "I'd rather not", 'I will drop out'],
-        pCS._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
-    rCS2.polls.push(pollCS._id);
-    const pollAll = Poll("Stevens?", ['Quack', 'Castle Point Hill', 'More debt???'],
-        admin._id, true, Date.now() - Math.floor(Math.random() * 1000*60*60*24*3),
-        Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
-    // Vote and React
-    rCS2.students.forEach(student => {
-        const user = users.find(user => user.email === student);
-        if (Math.random() < .8) {
-            pollCS.votes.push(Vote(user._id, Math.floor(Math.random() * 5)));
-            if (Math.random() < .9)
-                pollCS.reactions.push(Reaction(user._id, Math.random() < .8 ? 'like' : 'dislike'));
-            if (Math.random() < .15)
-                pollCS.comments.push(Comment(user._id, `My favorite beep boop is beep boop #${Math.floor(Math.random()*10000)}`,
-                    Date.now() - Math.floor(Math.random() * 1000*60*60*24*3)));
-        }
-    });
+    const plAdmin = Poll('Do you like rubber ducks?', ['Yes','Obviously','No, I hate this school.','DUCKSDUCKSDUCKS!!!'],
+        admin._id, true, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(plAdmin, creative, true);
+    const pl115a = Poll('Did you fill out your course evaluation?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
+        p115._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl115a, cs115a);
+    const pl115b = Poll('Did you fill out your course evaluation?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
+        p115._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl115b, cs115b);
+    const pl115c = Poll('Did you fill out your course evaluation?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
+        p115._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl115c, cs115c);
+    const pl284a = Poll('Which Data Structure is your favorite?', ['linked list','binary tree','heap','I hate all data structures'],
+        p284._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl284a, cs284a);
+    const pl284b = Poll('Which Data Structure is your favorite?', ['linked list','binary tree','heap','I hate all data structures'],
+        p284._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl284b, cs284b);
+    const pl284c = Poll('Which Data Structure is your favorite?', ['linked list','binary tree','heap','I hate all data structures'],
+        p284._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl284c, cs284c);
+    const pl385a = Poll('Which sorting algorithm is your favorite?', ['Bubble sort','Selection sort','Insertion sort','Quicksort','Mergesort'],
+        p385._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl385a, cs385a);
+    const pl385a2 = Poll('How are you feeling?', ['Happiness','No Happiness','Sadness','Madness'],
+        p385._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl385a2, cs385a);
+    const pl385b = Poll('How are you feeling?', ['Happiness','No Happiness','Sadness','Madness'],
+        p385._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl385b, cs385b);
+    const pl385c = Poll('How are you feeling?', ['Happiness','No Happiness','Sadness','Madness'],
+        p385._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl385c, cs385c);
+    const pl546a = Poll('When did you finish your final project?', ['A few weeks ago','This week','Today','It\'s not done yet'],
+        p546._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl546a, cs546a);
+    const pl546b = Poll('Are you done with your final project?', ['Of course','Still working on it','There\'s a final project?'],
+        p546._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl546b, cs546b);
+    const pl546c = Poll('When is the final project due?', ['December 18','December 25','There\'s a final project?'],
+        p546._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl546c, cs546c);
+    const pl103 = Poll('How many books have you read this semester?', ['1','2','3','None, not even the required ones'],
+        p103._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl103, cal103);
+    const pl101 = Poll('Are you dead yet?', ['Yes','No','Just on the inside'],
+        p101._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(pl101, obi101);
+    const plNap = Poll('Do you regularly sleep during this class?', ['Yes (congrats)','No (Why not?)'],
+        pNap._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(plNap, napping);
+    const plWri = Poll('Are you happy today?', ['Yes, like the warm sun on a bright April day','No, I am a dark cloud on the verge of raining'],
+        pWri._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(plWri, creative);
+    const plAcc = Poll('What is 1+1?', ['1','2','3','42'],
+        pAct._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
+    populatePoll(plAcc, accting);
+    const plClosed = Poll('How\'s the weather?', ['Fine', 'Less fine'], admin._id, true, Date.now() - 1000*60*60*24*2, Date.now());
+    populatePoll(plClosed, creative, true);
+    
     // Database things
     const db = await dbConnection();
     await db.dropDatabase();
     const usersCol = await collections.users();
     const pollsCol = await collections.polls();
-    await usersCol.insertMany([...users, admin, pAll, pCS, pEng]);
-    await pollsCol.insertMany([pollCS, pollAll]);
+    await usersCol.insertMany(users);
+    await pollsCol.insertMany(polls);
     closeConnection();
 };
 

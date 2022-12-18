@@ -15,7 +15,7 @@ router
     }))
     .post(validate(
         ['email', 'password', 'display_name', 'class_year', 'major', 'gender', 'school', 'date_of_birth']
-    ), sync(async (req, res) => { // Validate credentials (TODO: Not present?), setup session
+    ), sync(async (req, res) => {
         const email = req.body.email.toLowerCase();
         if(!email.match(/^[a-z]{3,}[0-9]*$/))
             throw statusError(400, "Invalid Stevens email address.");
@@ -26,8 +26,8 @@ router
         const display_name = req.body.display_name;
         if(display_name.length < 2)
             throw 'Display name must be at least 2 characters long.';
-        if(display_name.match(/[^a-z.'\-]/i))
-            throw 'Display name can only contain letters, periods, and apostrophes.';
+        if(display_name.match(/[^a-z.'\- ]/i))
+            throw 'Display name can only contain letters, periods, spaces, and apostrophes.';
         if(!validGenders.includes(req.body.gender))
             throw 'Invalid gender.';
         if(!validSchools.includes(req.body.school))
