@@ -48,43 +48,29 @@ router
       let {hiddenRosterLabel, hiddenCSVString, hiddenAssistantEmails} = req.body;
       
       //todo: xss
-      xss(hiddenRosterLabel);
-      xss(hiddenCSVString);
-      xss(hiddenAssistantEmails);
-      try {
-        hiddenRosterLabel = requireString(hiddenRosterLabel, 'Title');
-        hiddenCSVString = requireString(hiddenCSVString, 'CSV Upload');
-        if(!hiddenAssistantEmails) {
-          hiddenAssistantEmails = [];
-        } else {
-          hiddenAssistantEmails = requireEmails(hiddenAssistantEmails.split(','), 'Assistant Emails');
-        }
+      hiddenRosterLabel = requireString(hiddenRosterLabel, 'Title');
+      hiddenCSVString = requireString(hiddenCSVString, 'CSV Upload');
+      hiddenAssistantEmails = requireString(hiddenAssistantEmails, 'hiddenAssistantEmails');
+      hiddenRosterLabel = xss(hiddenRosterLabel);
+      hiddenCSVString = xss(hiddenCSVString);
+      hiddenAssistantEmails = xss(hiddenAssistantEmails);
+      hiddenAssistantEmails = requireEmails(hiddenAssistantEmails.split(','), 'Assistant Emails');
 
-        const parsed = Papa.parse(hiddenCSVString);
-        if(parsed.errors.length > 0) throw statusError(400, 'Cannot parse uploaded file');
+      const parsed = Papa.parse(hiddenCSVString);
+      if(parsed.errors.length > 0) throw statusError(400, 'Cannot parse uploaded file');
 
-        const emailIndex = parsed.data[0].indexOf('SIS Login ID');
-        if(emailIndex === -1) throw statusError(400, 'Not a Stevens CSV file');
-        let studentEmails = parsed.data.map((student) => {
-          try {
-            return requireEmail(student[emailIndex]);
-          } catch (e) {
-            return null;
-          }
-        });
+      const emailIndex = parsed.data[0].indexOf('SIS Login ID');
+      if(emailIndex === -1) throw statusError(400, 'Not a Stevens CSV file');
+      let studentEmails = parsed.data.map((student) => {
+          return requireEmail(student[emailIndex]);
+      });
 
-        studentEmails = studentEmails.filter((email) => {
-          return email !== null;
-        })
-        
-        const updatedUser = await createRoster(req.session.userId, hiddenRosterLabel, studentEmails, hiddenAssistantEmails);
-        return res.redirect('/rosters');
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        });
-      }  
+      studentEmails = studentEmails.filter((email) => {
+        return email !== null;
+      })
+      
+      const updatedUser = await createRoster(req.session.userId, hiddenRosterLabel, studentEmails, hiddenAssistantEmails);
+      return res.redirect('/rosters');
     }));
 
 router
@@ -108,25 +94,17 @@ router
       }
       let {titleInput, studentEmailInput, assistantEmailInput} = req.body;
       //todo: xss
-      xss(titleInput);
-      xss(studentEmailInput);
-      xss(assistantEmailInput);
-      try {
-        titleInput = requireString(titleInput, 'Title');
-        studentEmailInput = requireEmails(studentEmailInput.split(','), 'Student Emails');
-        if(!assistantEmailInput.trim()) {
-          assistantEmailInput = [];
-        } else {
-          assistantEmailInput = requireEmails(assistantEmailInput.split(','), 'Assistant Emails');
-        }
-        const updatedUser = await createRoster(req.session.userId, titleInput, studentEmailInput, assistantEmailInput);
-        return res.redirect('/rosters');
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        });
-      }  
+
+      titleInput = requireString(titleInput, 'title');
+      studentEmailInput = requireString(studentEmailInput, 'studentEmailInput');
+      assistantEmailInput = requireString(assistantEmailInput, 'assistantEmailInput');
+      titleInput = xss(titleInput);
+      studentEmailInput = xss(studentEmailInput);
+      assistantEmailInput = xss(assistantEmailInput);
+      studentEmailInput = requireEmails(studentEmailInput.split(','), 'Student Emails');
+      assistantEmailInput = requireEmails(assistantEmailInput.split(','), 'Assistant Emails');
+      const updatedUser = await createRoster(req.session.userId, titleInput, studentEmailInput, assistantEmailInput);
+      return res.redirect('/rosters');
     }));
 
 router
@@ -160,17 +138,10 @@ router
       
       let {titleInput} = req.body;
       //todo: xss
-      xss(titleInput);
+      titleInput = requireString(titleInput, 'Title');
+      titleInput = xss(titleInput);
       
-      try {
-        titleInput = requireString(titleInput, 'Title');
-        const updatedRoster = await updateRosterLabel(req.session.userId, req.params.rosterId, titleInput);
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        })
-      }
+      const updatedRoster = await updateRosterLabel(req.session.userId, req.params.rosterId, titleInput);
       return res.redirect('/rosters');
     }));
 
@@ -206,20 +177,13 @@ router
       
       let {studentEmailInput, category} = req.body;
       //todo: xss
-      xss(studentEmailInput);
-      xss(category);
       studentEmailInput = requireString(studentEmailInput, 'Email(s)');
+      studentEmailInput = xss(studentEmailInput);
       studentEmailInput = requireEmails(studentEmailInput.split(','), 'Email(s)');
       category = checkCategory(category, 'category');
+      category = xss(category);
 
-      try {
-        const updatedRoster = await addPersonToRoster(req.session.userId, req.params.rosterId, studentEmailInput, category);
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        })
-      }
+      const updatedRoster = await addPersonToRoster(req.session.userId, req.params.rosterId, studentEmailInput, category);
       return res.redirect('/rosters');
     }));
 
@@ -261,14 +225,7 @@ router
         category = 'students';
       }
 
-      try {
-        const updatedRoster = await removePersonFromRoster(req.session.userId, req.params.rosterId, req.params.studentEmail, category);
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        })
-      }
+      const updatedRoster = await removePersonFromRoster(req.session.userId, req.params.rosterId, req.params.studentEmail, category);
       return res.redirect('/rosters');
     }));
 

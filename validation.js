@@ -53,7 +53,7 @@ const requireBoolean = (bool, name) => {
 const requireOptions = (options, name) => {
     exists(options, name);
     if (typeof options !== 'object' || !Array.isArray(options))
-        throw statusError(400, `Field '${name} must be an array.`);
+        throw statusError(400, `Field '${name}' must be an array.`);
     if (!options.length)
         throw statusError(400, `Field '${name}' must include at least one option.`);
     options = options.map((option) => option.trim());
@@ -97,7 +97,7 @@ const requireEmail = (email, name) => {
 
 const checkCategory = (category, name) => {
     exists(category, name);
-    category = requireString(category).toLowerCas();
+    category = requireString(category).toLowerCase();
     if (category !== 'students' && category !== 'assistants')
         throw statusError(400, `${category || "category"} is undefined`);
     return category;

@@ -56,27 +56,20 @@ router
       
       let {authEmailInput} = req.body;
       //todo: xss
-      xss(authEmailInput);
       authEmailInput = requireEmail(authEmailInput, 'email');
+      authEmailInput = xss(authEmailInput);
 
-      try {
-        const user = await getUserByEmail(authEmailInput);
-        if(user === null) throw statusError(404, 'User not found');
-        let auth;
-        if(req.params.auth === 'manager') {
-          auth = 'is_manager';
-        } else if(req.params.auth === 'admin') {
-          auth = 'is_admin';
-        } else {
-          throw statusError(404, 'route not found');
-        }
-        const update = await addAuth(user._id, auth);
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        })
+      const user = await getUserByEmail(authEmailInput);
+      if(user === null) throw statusError(404, 'User not found');
+      let auth;
+      if(req.params.auth === 'manager') {
+        auth = 'is_manager';
+      } else if(req.params.auth === 'admin') {
+        auth = 'is_admin';
+      } else {
+        throw statusError(404, 'route not found');
       }
+      const update = await addAuth(user._id, auth);
       return res.redirect('/admin');
     }));
 
@@ -114,24 +107,17 @@ router
         });
       }
 
-      try {
-        const user = await getUserByEmail(req.params.userEmail);
-        if(user === null) throw statusError(404, 'User not found');
-        let auth;
-        if(req.params.auth === 'manager') {
-          auth = 'is_manager';
-        } else if(req.params.auth === 'admin') {
-          auth = 'is_admin';
-        } else {
-          throw statusError(404, 'route not found');
-        }
-        const update = await removeAuth(user._id, auth);
-      } catch (e) {
-        return res.status(e.status).render('error', {
-          status: e.status,
-          message: e.message
-        })
+      const user = await getUserByEmail(req.params.userEmail);
+      if(user === null) throw statusError(404, 'User not found');
+      let auth;
+      if(req.params.auth === 'manager') {
+        auth = 'is_manager';
+      } else if(req.params.auth === 'admin') {
+        auth = 'is_admin';
+      } else {
+        throw statusError(404, 'route not found');
       }
+      const update = await removeAuth(user._id, auth);
       return res.redirect('/admin');
     }));
 
