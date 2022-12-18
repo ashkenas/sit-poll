@@ -90,6 +90,10 @@ router
         const close_date = req.body.close_date;
 
         const poll = await getPollById(req.params.id);
+        if (req.session.userId !== poll.author.toString())
+            throw statusError(403, "You may not edit a poll you did not create");
+        if (poll.votes.length > 0)
+            throw statusError(403, 'You may not edit the poll after the first vote is cast');
        
         if (close_date < Date.now())
             throw statusError(400, 'Close date must be in the future.');
@@ -149,6 +153,7 @@ router
             self: poll.author.toString() === req.session.userId,
             reaction: await getReaction(req.params.id, req.session.userId),
             author: (await getUserById(poll.author)).display_name,
+            editable: poll.totalVotes === 0
         });
     }));
     

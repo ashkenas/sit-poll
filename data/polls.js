@@ -272,6 +272,8 @@ const getPollResults = async (id) => {
         return prev;
     }, {});
 
+    poll.totalVotes = total;
+
     poll.votes = poll.choices.map((choice) => {
         return {
             choice: choice,
