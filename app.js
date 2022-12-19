@@ -30,7 +30,8 @@ const errorMiddleware = (err, req, res, next) => {
     if (!err.status) console.error(err);
     const status = err.status || 500;
     const message = err.status ? err.message : 'Internal server error.';
-    if (req.method === 'GET') {
+    if (req.method === 'GET' || req.originalUrl.startsWith('/rosters')
+                             || req.originalUrl.startsWith('/admin')) {
         res.status(status).render('error', {
             status: status,
             message: message
