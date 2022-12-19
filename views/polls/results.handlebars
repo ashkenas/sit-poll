@@ -9,10 +9,10 @@
                 <a class="button is-link" href="/polls/{{poll._id}}/metrics">Metrics</a>
             {{/if}}
             {{#if (or session.admin self)}}
-                <button id="delete-button" class="button is-danger has-text-black">Delete</a>
+                <button id="delete-button" class="button is-danger has-text-black">Delete</button>
             {{/if}}
         </div>
-        <h2 class="title">{{poll.title}}</h1>
+        <h2 class="title">{{poll.title}}</h2>
         <p class="subtitle">By <span>{{author}}</span></p>
         <div id="votes" style="margin-bottom:1rem;"></div>
         <div id="reactions" class="buttons"> 
