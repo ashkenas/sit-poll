@@ -153,7 +153,8 @@ router
             self: req.session.self,
             reaction: await getReaction(req.params.id, req.session.userId),
             author: (await getUserById(poll.author)).display_name,
-            editable: poll.totalVotes === 0
+            editable: poll.totalVotes === 0,
+            votesData: encodeURIComponent(JSON.stringify(poll.votes))
         });
     }));
     

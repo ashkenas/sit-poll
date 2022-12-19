@@ -254,5 +254,5 @@ ws.addEventListener('message', event => {
     }
 });
 
-renderVotes({{{json poll.votes}}});
+renderVotes(JSON.parse(decodeURIComponent("{{votesData}}")));
 </script>
