@@ -3,6 +3,7 @@ const { getUserById } = require('../data/users');
 const { validate, validMajors, validSchools, validGenders } = require('../validation');
 const { updateUser } = require('../data/').users;
 const { sync, statusError } = require('../helpers');
+const { default: xss } = require('xss');
 const router = express.Router();
 
 router
@@ -42,7 +43,7 @@ router
 
         const result = await updateUser(
             req.session.userId,
-            display_name,
+            xss(display_name),
             class_year,
             date_of_birth,
             req.body.gender,

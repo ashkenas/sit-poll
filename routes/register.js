@@ -2,6 +2,7 @@ const express = require('express');
 const { getUserByEmail, createUser } = require('../data/users');
 const { validate, validMajors, validSchools, validGenders } = require('../validation');
 const { sync, statusError } = require('../helpers');
+const { default: xss } = require('xss');
 const router = express.Router();
 
 router
@@ -49,9 +50,9 @@ router
             throw statusError(400, "An account with that email exists already.");  
 
         const result = await createUser(
-            email,
+            xss(email),
             password,
-            display_name,
+            xss(display_name),
             req.body.major,
             req.body.school,
             req.body.gender,
