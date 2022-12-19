@@ -55,7 +55,7 @@ const createUser = async function (email, password, display_name, major, school,
     if(!validMajors.includes(major))
         throw 'Invalid major.';
     const thisYear = (new Date()).getFullYear();
-    if(class_year < thisYear || class_year >= thisYear + 8)
+    if((class_year < thisYear || class_year >= thisYear + 8) && class_year !== 0)
         throw 'Invalid class year';
     if(date_of_birth > new Date())
         throw 'Cannot be born in the future.';
@@ -110,7 +110,7 @@ const updateUser = async (userId, display_name, class_year, date_of_birth, gende
     if(!validMajors.includes(major))
         throw 'Invalid major.';
     const thisYear = (new Date()).getFullYear();
-    if(class_year < thisYear || class_year >= thisYear + 8)
+    if((class_year < thisYear || class_year >= thisYear + 8) && class_year !== 0)
         throw 'Invalid class year';
     if(date_of_birth > new Date())
         throw 'Cannot be born in the future.';
