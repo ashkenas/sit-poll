@@ -4,7 +4,7 @@ A website for polling students at Stevens Institute of Technology. Made for clas
 ## Setup
 1. Clone the repo to your local machine.
 2. Run `npm install` inside the repo.
-3. Run `npm run seed` to seed the database with test data.
+3. Run `npm run seed` to seed the database with test data. This will take several minutes. Do not be alarmed.
 4. Run `npm start` to start the server.
 
 ## Demo User Accounts
