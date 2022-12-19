@@ -5,20 +5,6 @@ const { stringifyId, statusError } = require("../helpers");
 const { requireString, requireId, requireEmail, requireEmails } = require("../validation");
 const { getUserByEmail, getUserById } = require("./users");
 
-/* const checkOwnership = async (userId, rosterId) => {
-  const usersCol = await users();
-  // returns the user which contains the given roster
-  const userWithRoster = await usersCol.findOne(
-    {"rosters._id": rosterId}
-  );
-
-  if(!userWithRoster._id.equals(userId)) {
-    throw statusError(401, `Roster cannot be edited by current user`);
-  }
-
-  return true;
-} */
-
 const getAdmins = async () => {
   const usersCol = await users();
   const userList = await usersCol.find({}).toArray();
@@ -52,11 +38,13 @@ const addAuth = async (userId, authLevel) => {
   let status;
   if(authLevel === 'is_admin') {
     status = user.is_admin;
-  } else {
+  } else if(authLevel === 'is_manager') {
     status = user.is_manager;
+  } else {
+    status = true;
   }
 
-  if(status) throw statusError(403, 'User already has authorization');
+  if(status) throw statusError(403, 'User already has authorization/cannot update authorization');
 
   const updatedInfo = await usersCol.updateOne(
     {_id: userId},
@@ -79,11 +67,13 @@ const removeAuth = async (userId, authLevel) => {
   let status;
   if(authLevel === 'is_admin') {
     status = user.is_admin;
-  } else {
+  } else if (authLevel === 'is_manager') {
     status = user.is_manager;
+  } else {
+    status = false;
   }
 
-  if(!status) throw statusError(403, 'User already does not have authorization');
+  if(!status) throw statusError(403, 'User already does not have authorization/cannot update authorization');
 
   const updatedInfo = await usersCol.updateOne(
     {_id: userId},
