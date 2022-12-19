@@ -640,8 +640,8 @@ const updatePoll = async (poll_id, title, choices, close_date) =>{
         }
     );
     
-    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
-        throw "Failed to updatep poll";
+    if (!updateInfo.acknowledged)
+        throw "Failed to update poll.";
 
     return { success: true };
 };

@@ -56,7 +56,10 @@ const errorManagers = {
 if (options > 2)
     removeButton.style.display = 'block';
 
-const dateString = new Date({{poll.close_date}}).toISOString().split('.')[0];
+// Compute the time string with the timezone offset because javascript
+// Ty stack overflow for the idea (https://stackoverflow.com/a/28149561)
+const timezoneShift = (new Date()).getTimezoneOffset() * 60 * 1000;
+const dateString = (new Date({{poll.close_date}} - timezoneShift)).toISOString().split('.')[0];
 document.getElementById('close_date').value = dateString.substring(0, dateString.length - 3);
 
 document.getElementById('add-option').addEventListener('click', (event) => {

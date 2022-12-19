@@ -96,7 +96,7 @@
         const password = formData.get('password');
         if(email === "")
             return showEmailError('An email must be provided.');
-        if(!email.match(/^[a-z]{3,}[0-9]*$/))
+        if(!email.match(/^[a-z]{3,}[0-9]*$/i))
             return showEmailError("Invalid Stevens email address.");
         showEmailError();   
         if(password === "")
