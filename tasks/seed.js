@@ -193,13 +193,13 @@ const main = async () => {
     const plAdmin = Poll('Do you like rubber ducks?', ['Yes','Obviously','No, I hate this school.','DUCKSDUCKSDUCKS!!!'],
         admin._id, true, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
     populatePoll(plAdmin, creative, true);
-    const pl115a = Poll('Did you fill out your course evaluation?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
+    const pl115a = Poll('Did you fill out your course evaluation section A?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
         p115._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
     populatePoll(pl115a, cs115a);
-    const pl115b = Poll('Did you fill out your course evaluation?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
+    const pl115b = Poll('Did you fill out your course evaluation section B?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
         p115._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
     populatePoll(pl115b, cs115b);
-    const pl115c = Poll('Did you fill out your course evaluation?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
+    const pl115c = Poll('Did you fill out your course evaluation section C?', ['Yes','Not yet, but I will later','I\'ll finish it now','I refuse'],
         p115._id, false, Date.now() - (1000*60*60*24*2), Date.now() + Math.floor((1 + (Math.random() * 2)) * 1000*60*60*24));
     populatePoll(pl115c, cs115c);
     const pl284a = Poll('Which Data Structure is your favorite?', ['linked list','binary tree','heap','I hate all data structures'],

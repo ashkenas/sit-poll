@@ -131,7 +131,7 @@ const updateUser = async (userId, display_name, class_year, date_of_birth, gende
         { _id: userId },
         { $set: changes }
     );
-    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
+    if (!updateInfo.acknowledged)
         throw 'Failed to update user.';
 
     return { success: true };

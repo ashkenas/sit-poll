@@ -108,6 +108,7 @@ const requirePoll = (id) => sync(async (req, res, next) => {
         throw statusError(404, 'Poll not found.');
 
     req.session.self = poll.author.toString() === req.session.userId;
+    res.locals.session.self = req.session.self;
 
     if (req.session.admin) // Admins can always see
         return next();
@@ -191,12 +192,13 @@ const getAllPollsInfo = async (userId) => {
                     students: user.email
                 }
             }
-        },
-        { 
-            projection: { "rosters.$": 1 }
         }
     ).toArray();
-    const personalPolls = managers.map(manager => manager.rosters[0].polls).flat();
+    const personalPolls = managers.map(manager => manager.rosters.map(roster => {
+        if(roster.students.includes(user.email))
+            return roster.polls;
+        return [];
+    })).flat(2);
 
     const pollsCol = await polls();
     const foundPolls = await pollsCol.find(
@@ -376,6 +378,8 @@ const getPollMetrics = async (id) => {
         const metricData = {};
         const totals = {};
         data.forEach(({ _id: { vote, metricVal }, count }) => {
+            if (metric === 'class_year' && metricVal === 0)
+                metricVal = 'Not enrolled';
             if (!metricData[metricVal]) {
                 metricData[metricVal] = poll.choices.map((choice, i) => {
                     return {

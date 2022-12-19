@@ -60,10 +60,14 @@ router
         const poll = await getPollInfoById(req.params.id);
         if (poll.close_date < Date.now() || req.session.self || req.session.admin)
             return res.redirect(`/polls/${req.params.id.toString()}/results`);
+
+        const lastVote = await getVote(req.params.id, req.session.userId);
+
         res.render('polls/vote', {
             poll: poll,
             author: (await getUserById(poll.author)).display_name,
-            lastVote: await getVote(req.params.id, req.session.userId)
+            lastVote: lastVote,
+            update: lastVote !== null
         });
     }))
     .post(validate(['vote']), sync(async (req, res) => { // Vote on poll
