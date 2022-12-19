@@ -12,10 +12,6 @@ const checkOwnership = async (userId, rosterId) => {
     {"rosters._id": rosterId}
   );
 
-  console.log(userWithRoster._id);
-  console.log(userId);
-  console.log((userWithRoster._id).equals(userId))
-
   if(!(userWithRoster._id).equals(userId)) {
     throw statusError(403, `Roster cannot be edited by current user`);
   }
@@ -107,7 +103,8 @@ const createRoster = async (userId, label, students, assistants) => {
 };
 
 // return object indicating roster was removed successfully, else throw error
-const deleteRoster = async (rosterId) => {
+const deleteRoster = async (userId, rosterId) => {
+  userId = requireId(userId, 'user id');
   rosterId = requireId(rosterId, 'roster id');
   await checkOwnership(userId, rosterId);
 
@@ -167,7 +164,7 @@ const addPersonToRoster = async (userId, rosterId, emailArray, category) => {
 
   if (unadded.length > 0) {
     // todo: check error status, figure out new line for each email; maybe just alert user rather than error?
-    throw statusError(400, `Unable to add the following email(s) because they already exist in the roster:\n` + unadded.join('\r\n'));
+    throw statusError(400, `Unable to add the following email(s) because they already exist in the roster: ` + unadded.join(', ') + `. Any other emails provided were added.`);
   }
   
   return {addedToRoster: 'true'};

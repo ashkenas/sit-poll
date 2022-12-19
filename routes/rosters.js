@@ -97,12 +97,17 @@ router
 
       titleInput = requireString(titleInput, 'title');
       studentEmailInput = requireString(studentEmailInput, 'studentEmailInput');
-      assistantEmailInput = requireString(assistantEmailInput, 'assistantEmailInput');
       titleInput = xss(titleInput);
       studentEmailInput = xss(studentEmailInput);
-      assistantEmailInput = xss(assistantEmailInput);
       studentEmailInput = requireEmails(studentEmailInput.split(','), 'Student Emails');
-      assistantEmailInput = requireEmails(assistantEmailInput.split(','), 'Assistant Emails');
+      if(assistantEmailInput) {
+        assistantEmailInput = requireString(assistantEmailInput, 'assistantEmailInput');
+        assistantEmailInput = xss(assistantEmailInput);
+        assistantEmailInput = requireEmails(assistantEmailInput.split(','), 'Assistant Emails');
+      } else {
+        assistantEmailInput = [];
+      }
+      
       const updatedUser = await createRoster(req.session.userId, titleInput, studentEmailInput, assistantEmailInput);
       return res.redirect('/rosters');
     }));
@@ -250,7 +255,8 @@ router
     }))
     .delete(sync(async (req, res) => {
       req.params.rosterId = requireId(req.params.rosterId, 'roster id');
-      const roster = await deleteRoster(req.params.rosterId);
+      req.params.userId = requireId(req.session.userId, 'user id');
+      const roster = await deleteRoster(req.session.userId, req.params.rosterId);
 
       if(!(req.session.manager || req.session.admin)) {
         return res.status(403).render('error', {
