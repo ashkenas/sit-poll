@@ -7,7 +7,8 @@ const createRoutes = require('./create');
 const registerRoutes = require('./register');
 const editProfileRoutes = require('./editProfile');
 const logoutRoutes = require('./logout')
-const passwordRoutes = require('./password')
+const passwordRoutes = require('./password');
+const { getUserById } = require('../data/users');
 
 const notFound = (name) => (req, res) => {
     res.status(404).render('error', {
@@ -28,12 +29,16 @@ const authMiddleware = (req, res, next) => { // Redirect if not logged in
             res.status(403).json({ error: 'Not logged in.' });
         }
     } else {
-        res.locals.session = {
-            userId: req.session.userId,
-            manager: req.session.manager || false,
-            admin: req.session.admin || false
-        };
-        next();
+        getUserById(req.session.userId).then((user) => {
+            req.session.manager = user.is_manager;
+            req.session.admin = user.is_admin;
+            res.locals.session = {
+                userId: req.session.userId,
+                manager: req.session.manager || false,
+                admin: req.session.admin || false
+            };
+            next();
+        })
     }
 };
 
