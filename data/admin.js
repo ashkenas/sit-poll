@@ -38,11 +38,13 @@ const addAuth = async (userId, authLevel) => {
   let status;
   if(authLevel === 'is_admin') {
     status = user.is_admin;
-  } else {
+  } else if(authLevel === 'is_manager') {
     status = user.is_manager;
+  } else {
+    status = true;
   }
 
-  if(status) throw statusError(403, 'User already has authorization');
+  if(status) throw statusError(403, 'User already has authorization/cannot update authorization');
 
   const updatedInfo = await usersCol.updateOne(
     {_id: userId},
@@ -65,11 +67,13 @@ const removeAuth = async (userId, authLevel) => {
   let status;
   if(authLevel === 'is_admin') {
     status = user.is_admin;
-  } else {
+  } else if (authLevel === 'is_manager') {
     status = user.is_manager;
+  } else {
+    status = false;
   }
 
-  if(!status) throw statusError(403, 'User already does not have authorization');
+  if(!status) throw statusError(403, 'User already does not have authorization/cannot update authorization');
 
   const updatedInfo = await usersCol.updateOne(
     {_id: userId},
