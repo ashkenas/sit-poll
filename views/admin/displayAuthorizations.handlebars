@@ -30,7 +30,7 @@
     {{#each admins}}
       <tr>
         <td>{{this}}</td>
-        <td><a href="/admin/remove/admin/{{this}}" class="updateRoster">Remove admin</a></td>
+        <td>{{#unless (equals this ../selfEmail)}}<a href="/admin/remove/admin/{{this}}" class="updateRoster">Remove admin</a>{{/unless}}</td>
       </tr>
     {{/each}} 
   </table>

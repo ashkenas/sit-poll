@@ -14,7 +14,8 @@ router
       if(req.session.admin) {
         return res.render('admin/displayAuthorizations', {
           managers: await getManagers(),
-          admins: await getAdmins()
+          admins: await getAdmins(),
+          selfEmail: (await getUserById(req.session.userId)).email
         });
       } else {
         return res.status(403).render('error', {
