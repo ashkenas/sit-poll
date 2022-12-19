@@ -50,17 +50,26 @@ router
       //todo: xss
       hiddenRosterLabel = requireString(hiddenRosterLabel, 'Title');
       hiddenCSVString = requireString(hiddenCSVString, 'CSV Upload');
-      hiddenAssistantEmails = requireString(hiddenAssistantEmails, 'hiddenAssistantEmails');
-      hiddenRosterLabel = xss(hiddenRosterLabel);
-      hiddenCSVString = xss(hiddenCSVString);
-      hiddenAssistantEmails = xss(hiddenAssistantEmails);
-      hiddenAssistantEmails = requireEmails(hiddenAssistantEmails.split(','), 'Assistant Emails');
+      if (hiddenAssistantEmails) {
+        hiddenAssistantEmails = requireString(hiddenAssistantEmails, 'hiddenAssistantEmails');
+        hiddenAssistantEmails = requireEmails(hiddenAssistantEmails.split(','), 'Assistant Emails');
+      } else {
+        hiddenAssistantEmails = [];
+      }
 
       const parsed = Papa.parse(hiddenCSVString);
-      if(parsed.errors.length > 0) throw statusError(400, 'Cannot parse uploaded file');
+      if(parsed.errors.length > 0) {
+        for (const error of parsed.errors) {
+          if (error.code !== 'UndetectableDelimiter') {
+            console.error(parsed.errors);
+            throw statusError(400, 'Cannot parse uploaded file');
+          }
+        }
+      }
 
-      const emailIndex = parsed.data[0].indexOf('SIS Login ID');
-      if(emailIndex === -1) throw statusError(400, 'Not a Stevens CSV file');
+      const emailIndex = parsed.data[0].indexOf('Emails');
+      parsed.data.shift();
+      if(emailIndex === -1) throw statusError(400, 'No column named "Emails".');
       let studentEmails = parsed.data.map((student) => {
           return requireEmail(student[emailIndex]);
       });
