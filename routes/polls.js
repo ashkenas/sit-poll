@@ -4,7 +4,6 @@ const router = express.Router();
 const path = require('path');
 const { statusError, sync } = require('../helpers');
 const data = require('../data');
-const { default: xss } = require('xss');
 const { getUserById } = data.users;
 const { addComment, getPollById, createPoll, updatePoll, deletePoll, deleteComment, deleteReaction, getAllPollsInfo, getComment, getPollInfoById, getPollMetrics, getPollResults, getVote, getReaction, reactOnPoll, requirePoll, voteOnPoll } = data.polls;
 
@@ -41,8 +40,8 @@ router
             requireId(req.body.roster, 'roster');
 
         const stat = await createPoll(
-            xss(req.body.title),
-            req.body.choices.map(xss),
+            req.body.title,
+            req.body.choices,
             req.session.userId,
             req.session.admin,
             close_date,
@@ -86,8 +85,8 @@ router
     .put(validate( // Update a poll
         ['title', 'choices', 'close_date']
     ), sync(async (req, res) => {
-        const title = xss(req.body.title);
-        const choices = req.body.choices.map(xss);
+        const title = req.body.title;
+        const choices = req.body.choices;
         const close_date = req.body.close_date;
 
         const poll = await getPollById(req.params.id);
@@ -177,7 +176,7 @@ router
     .route('/:id/comments')
     .post(validate(['comment']), sync(async (req, res) => { // Create comment on poll
         res.updateClients(req.params.id.toString(), 'newComment', {
-            ...(await addComment(req.params.id, req.session.userId, xss(req.body.comment))),
+            ...(await addComment(req.params.id, req.session.userId, req.body.comment)),
             display_name: (await getUserById(req.session.userId)).display_name
         });
         res.json({ redirect: path.join(req.originalUrl, '..', 'results') });
