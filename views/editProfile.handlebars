@@ -1,28 +1,112 @@
 <section class="section">
     <div class="container is-max-dekstop">
         <h1 class="title">Edit Profile</h1>
+        <form id="edit-form" method="post">
             <div class="field">
-                <p for="display_name" class="label">Display Name:</p>
-                <p>{{displayName}}</p>
-                <a href="/editProfile/changeDisplayName/{{id}}" class="updateRoster">Change name</a>
+                <label for="display_name" class="label">Display Name</label>
+                <div class="control">
+                    <input class="input" type="text" id="display_name" name="display_name" value="{{user.display_name}}">
+                </div>
+                <p id="name-error" class="help is-danger error"></p>
             </div>
             <div class="field">
-                <p class="label" for="date_of_birth">Date of Birth:</p>
-                <p>{{DOB}}</p>
+                <label class="label" for="date_of_birth">Date of Birth</label>
+                <div class="control">
+                    <input class="input" type="date" id="date_of_birth" name="date_of_birth"></select>
+                </div>
+                <p id="date-error" class="help is-danger error"></p>
             </div>
             <div class="field">
-                <p class="label" for="year">Class Year:</p>
-                <p>{{classYear}}</p>
+                <label class="label" for="year">Class Year</label>
+                <div class="control">
+                    <select class="select" id="year" name="class_year">
+                        <option value="0">Not Enrolled</option>
+                    </select>
+                </div>
             </div>
             <div class="field">
-                <p class="label" for="gender">Gender:</p>
-                <p>{{gender}}</p>
-                <a href="/editProfile/changeGender/{{id}}" class="updateRoster">Change gender</a>
+                <label class="label" for="gender">Gender</label>
+                <div class="control">
+                    <select class="select" id="gender" name="gender">
+                        {{#each genders}}
+                            <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
             </div>
             <div class="field">
-                <p class="label" for="major">Major, School/College:</p>
-                <p>{{major}}, {{school}}</p>
-                <a href="/editProfile/changeMajor/{{id}}" class="updateRoster">Change major</a>
+                <label class="label" for="major">Major</label>
+                <div class="control">
+                    <select class="select" id="major" name="major">
+                        {{#each majors}}
+                            <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
             </div>
+            <div class="field">
+                <label class="label" for="school">School/College</label>
+                <div class="control">
+                    <select class="select" id="school" name="school">
+                        {{#each schools}}
+                            <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="buttons">
+                <input class="button is-link" type="submit" value="Edit">
+            </div>
+        </form>
     </div>
 </section>
+<script>
+    const showEmailError = errorManager('email-error');
+    const showPassError = errorManager('pass-error');
+    const showNameError = errorManager('name-error');
+    const showDateError = errorManager('date-error');
+    const yearSelect = document.getElementById('year');
+    
+    const thisYear = (new Date()).getFullYear();
+    for (let i = thisYear; i < thisYear + 8; i++) {
+        const option = document.createElement('OPTION');
+        option.value = i;
+        option.innerText = i;
+        yearSelect.append(option);
+    }
+
+    yearSelect.value = {{user.class_year}};
+    document.getElementById('major').value = "{{user.major}}";
+    document.getElementById('gender').value = "{{user.gender}}";
+    document.getElementById('school').value = "{{user.school}}";
+
+    const dateString = new Date("{{user.date_of_birth}}").toISOString().split('T')[0];
+    document.getElementById('date_of_birth').value = dateString;
+
+    handleForm('edit-form', 'POST', '/editProfile', (formData) => {
+        const display_name = formData.get('display_name');
+        if(display_name.length < 2)
+            return showNameError('Display name must be at least 2 characters long.');
+        if(display_name.match(/[^a-z.'\- ]/i))
+            return showNameError('Display name can only contain letters, periods, spaces, and apostrophes.');
+        showNameError();
+
+        const date_of_birth = new Date(formData.get('date_of_birth'));
+        if (isNaN(date_of_birth))
+            return showDateError('Invalid date.');
+        if (date_of_birth > new Date())
+            return showDateError('Cannot be born in the future.');
+        if ((new Date() - date_of_birth) < 1000*60*60*24*365*17)
+            return showDateError('Must be at least 17 years old.');
+        showDateError();
+
+        return {
+            display_name: display_name,
+            class_year: formData.get('class_year'),
+            major: formData.get('major'),
+            school: formData.get('school'),
+            gender: formData.get('gender'),
+            date_of_birth: date_of_birth.getTime()
+        };
+    });
+</script>

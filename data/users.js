@@ -88,6 +88,55 @@ const createUser = async function (email, password, display_name, major, school,
     return { insertedUser: insertInfo.insertedId };
 };
 
+const updateUser = async (userId, display_name, class_year, date_of_birth, gender, school, major) => {
+    userId = requireId(userId, 'userId');
+    if (!(await getUserById(userId)))
+        throw 'User does not exist.';
+    display_name = requireString(display_name, 'display_name');
+    major = requireString(major, 'major');
+    school = requireString(school, 'school');
+    gender = requireString(gender, 'gender');
+    class_year = requireInteger(class_year, 'class_year');
+    date_of_birth = requireDate(date_of_birth, 'date_of_birth');
+
+    if(display_name.length < 2)
+        throw 'Display name must be at least 2 characters long.';
+    if(display_name.match(/[^a-z.'\- ]/i))
+        throw 'Display name can only contain letters, periods, spaces, and apostrophes.';
+    if(!validGenders.includes(gender))
+        throw 'Invalid gender.';
+    if(!validSchools.includes(school))
+        throw 'Invalid school.';
+    if(!validMajors.includes(major))
+        throw 'Invalid major.';
+    const thisYear = (new Date()).getFullYear();
+    if(class_year < thisYear || class_year >= thisYear + 8)
+        throw 'Invalid class year';
+    if(date_of_birth > new Date())
+        throw 'Cannot be born in the future.';
+    if((new Date() - date_of_birth) < 1000*60*60*24*365*17)
+        throw 'Must be at least 17 years old.';
+
+    const changes = {
+        display_name: display_name,
+        major: major,
+        school: school,
+        gender: gender,
+        class_year: class_year,
+        date_of_birth: date_of_birth
+    };
+
+    const usersCol = await users();
+    const updateInfo = await usersCol.updateOne(
+        { _id: userId },
+        { $set: changes }
+    );
+    if (!updateInfo.acknowledged || !updateInfo.modifiedCount)
+        throw 'Failed to update user.';
+
+    return { success: true };
+};
+
 const validateUser = async function (email, password) {
     email = requireString(email, 'email');
     password = requireString(password, 'password');
@@ -130,5 +179,6 @@ module.exports = {
     getUserById,
     createUser,
     validateUser,
-    changePassword
+    changePassword,
+    updateUser
 };
